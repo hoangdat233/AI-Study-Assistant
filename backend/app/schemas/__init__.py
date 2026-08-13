@@ -1,6 +1,8 @@
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.schemas.chat import ChatMessageRequest, ChatMessageResponse, IndexResponse, MessageItem
 from app.schemas.document import DocumentDetailResponse, DocumentResponse
+from app.schemas.flashcard import FlashcardCreateRequest, FlashcardResponse
+from app.schemas.quiz import QuestionResponse, QuizCreateRequest, QuizResponse
 from app.schemas.summary import SummaryResponse
 
 __all__ = [
@@ -15,7 +17,13 @@ __all__ = [
     "ChatMessageResponse",
     "IndexResponse",
     "MessageItem",
+    "QuizCreateRequest",
+    "QuizResponse",
+    "QuestionResponse",
+    "FlashcardCreateRequest",
+    "FlashcardResponse",
 ]
+
 
 
 

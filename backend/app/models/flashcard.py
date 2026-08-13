@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, Text
+from sqlalchemy import ForeignKey, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,6 +18,7 @@ class Flashcard(Base, TimestampMixin):
     )
     front: Mapped[str] = mapped_column(Text)
     back: Mapped[str] = mapped_column(Text)
+    source_page: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     user = relationship("User", back_populates="flashcards")
     document = relationship("Document", back_populates="flashcards")

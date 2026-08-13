@@ -7,14 +7,27 @@ import { useEffect, useState } from "react";
 import { getCurrentUser } from "@/services/auth-service";
 import {
   deleteDocument,
+  deleteFlashcard,
+  deleteQuiz,
   generateDocumentSummary,
+  generateFlashcards,
+  generateQuiz,
   getChatHistory,
   getDocument,
+  getDocumentFlashcards,
+  getDocumentQuizzes,
   getDocumentSummary,
   indexDocument,
   sendChatMessage,
 } from "@/services/document-service";
-import { ChatMessage, DocumentDetailItem, SourceMetadata, SummaryItem } from "@/types";
+import {
+  ChatMessage,
+  DocumentDetailItem,
+  FlashcardItem,
+  QuizItem,
+  SourceMetadata,
+  SummaryItem,
+} from "@/types";
 
 export default function DocumentDetailPage() {
   const router = useRouter();
@@ -26,7 +39,8 @@ export default function DocumentDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<"text" | "summary" | "chat">("chat");
+  const [activeTab, setActiveTab] = useState<"text" | "summary" | "chat" | "study">("chat");
+  const [studySubTab, setStudySubTab] = useState<"quiz" | "flashcard">("quiz");
 
   // AI Summary State
   const [summary, setSummary] = useState<SummaryItem | null>(null);
@@ -42,6 +56,29 @@ export default function DocumentDetailPage() {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [activeSourcePreview, setActiveSourcePreview] = useState<SourceMetadata | null>(null);
+
+  // Phase 6 Quiz State
+  const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
+  const [activeQuiz, setActiveQuiz] = useState<QuizItem | null>(null);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizError, setQuizError] = useState<string | null>(null);
+  const [quizQuestionCount, setQuizQuestionCount] = useState<number>(5);
+  const [quizDifficulty, setQuizDifficulty] = useState<string>("medium");
+
+  // Active Quiz Player State
+  const [currentQuestionIdx, setCurrentQuestionIdx] = useState<number>(0);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [score, setScore] = useState<number>(0);
+  const [quizCompleted, setQuizCompleted] = useState<boolean>(false);
+
+  // Phase 6 Flashcard State
+  const [flashcards, setFlashcards] = useState<FlashcardItem[]>([]);
+  const [flashcardLoading, setFlashcardLoading] = useState(false);
+  const [flashcardError, setFlashcardError] = useState<string | null>(null);
+  const [flashcardCount, setFlashcardCount] = useState<number>(10);
+  const [currentCardIdx, setCurrentCardIdx] = useState<number>(0);
+  const [isCardFlipped, setIsCardFlipped] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadDocument() {
@@ -98,6 +135,25 @@ export default function DocumentDetailPage() {
     loadHistory();
   }, [activeTab, documentId]);
 
+  // Load Quizzes and Flashcards when switching to Study tab
+  useEffect(() => {
+    async function loadStudyMaterials() {
+      if (activeTab === "study" && documentId) {
+        try {
+          const [savedQuizzes, savedFlashcards] = await Promise.all([
+            getDocumentQuizzes(documentId),
+            getDocumentFlashcards(documentId),
+          ]);
+          setQuizzes(savedQuizzes);
+          setFlashcards(savedFlashcards);
+        } catch {
+          // Clean fallback
+        }
+      }
+    }
+    loadStudyMaterials();
+  }, [activeTab, documentId]);
+
   async function handleGenerateSummary(force: boolean = false) {
     try {
       setSummaryLoading(true);
@@ -135,7 +191,6 @@ export default function DocumentDetailPage() {
     setQuestionInput("");
     setChatError(null);
 
-    // Optimistically append user message to UI thread
     const tempUserMsg: ChatMessage = { role: "user", content: userQuestion };
     setChatMessages((prev) => [...prev, tempUserMsg]);
 
@@ -155,6 +210,106 @@ export default function DocumentDetailPage() {
     }
   }
 
+  // Quiz Handlers
+  async function handleGenerateQuiz() {
+    try {
+      setQuizLoading(true);
+      setQuizError(null);
+      const newQuiz = await generateQuiz(documentId, quizQuestionCount, quizDifficulty);
+      setQuizzes((prev) => [newQuiz, ...prev]);
+      startQuiz(newQuiz);
+    } catch (err: unknown) {
+      setQuizError(err instanceof Error ? err.message : "Failed to generate quiz.");
+    } finally {
+      setQuizLoading(false);
+    }
+  }
+
+  function startQuiz(quiz: QuizItem) {
+    setActiveQuiz(quiz);
+    setCurrentQuestionIdx(0);
+    setSelectedOption(null);
+    setIsSubmitted(false);
+    setScore(0);
+    setQuizCompleted(false);
+  }
+
+  function handleOptionSelect(opt: string) {
+    if (isSubmitted) return;
+    setSelectedOption(opt);
+  }
+
+  function handleSubmitQuestion() {
+    if (!selectedOption || !activeQuiz) return;
+    const currentQ = activeQuiz.questions[currentQuestionIdx];
+    const isCorrect = selectedOption === currentQ.correct_answer;
+    if (isCorrect) {
+      setScore((prev) => prev + 1);
+    }
+    setIsSubmitted(true);
+  }
+
+  function handleNextQuestion() {
+    if (!activeQuiz) return;
+    if (currentQuestionIdx + 1 < activeQuiz.questions.length) {
+      setCurrentQuestionIdx((prev) => prev + 1);
+      setSelectedOption(null);
+      setIsSubmitted(false);
+    } else {
+      setQuizCompleted(true);
+    }
+  }
+
+  async function handleDeleteQuiz(quizId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this quiz?")) return;
+    try {
+      await deleteQuiz(quizId);
+      setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
+      if (activeQuiz?.id === quizId) {
+        setActiveQuiz(null);
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to delete quiz.");
+    }
+  }
+
+  // Flashcard Handlers
+  async function handleGenerateFlashcards() {
+    try {
+      setFlashcardLoading(true);
+      setFlashcardError(null);
+      const newCards = await generateFlashcards(documentId, flashcardCount);
+      setFlashcards((prev) => [...newCards, ...prev]);
+      setCurrentCardIdx(0);
+      setIsCardFlipped(false);
+    } catch (err: unknown) {
+      setFlashcardError(err instanceof Error ? err.message : "Failed to generate flashcards.");
+    } finally {
+      setFlashcardLoading(false);
+    }
+  }
+
+  function handleShuffleFlashcards() {
+    if (flashcards.length === 0) return;
+    const shuffled = [...flashcards].sort(() => Math.random() - 0.5);
+    setFlashcards(shuffled);
+    setCurrentCardIdx(0);
+    setIsCardFlipped(false);
+  }
+
+  async function handleDeleteFlashcard(cardId: string) {
+    try {
+      await deleteFlashcard(cardId);
+      setFlashcards((prev) => prev.filter((c) => c.id !== cardId));
+      if (currentCardIdx >= flashcards.length - 1) {
+        setCurrentCardIdx(Math.max(0, flashcards.length - 2));
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to delete flashcard.");
+    }
+  }
+
   async function handleDelete() {
     if (!document) return;
     if (!confirm(`Are you sure you want to delete "${document.original_filename}"?`)) return;
@@ -167,7 +322,6 @@ export default function DocumentDetailPage() {
     }
   }
 
-  // Auto-unwrap JSON strings like {"answer": "..."} to plain text for clean display
   function formatCleanAnswer(content: string): string {
     if (!content) return "";
     const trimmed = content.trim();
@@ -178,12 +332,11 @@ export default function DocumentDetailPage() {
           return String(parsed.answer);
         }
       } catch {
-        // Fallback to original string if not valid JSON
+        // Fallback
       }
     }
     return content;
   }
-
 
   function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -286,8 +439,15 @@ export default function DocumentDetailPage() {
         >
           ✨ AI Chat (Gemini RAG)
         </button>
-        <button disabled className="pb-3 text-slate-600 cursor-not-allowed" title="Coming in Phase 6">
-          Quizzes & Flashcards (Phase 6)
+        <button
+          onClick={() => setActiveTab("study")}
+          className={`pb-3 transition-colors ${
+            activeTab === "study"
+              ? "border-b-2 border-indigo-500 font-bold text-indigo-400"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          📝 Quizzes & Flashcards (Phase 6)
         </button>
       </nav>
 
@@ -429,7 +589,6 @@ export default function DocumentDetailPage() {
       {/* AI Chat Tab (Phase 5 RAG Gemini Studio) */}
       {activeTab === "chat" && (
         <section className="mt-6 space-y-6">
-          {/* Indexing Call-to-Action if document not yet indexed */}
           {!isIndexed && (
             <div className="rounded-xl border border-purple-800/80 bg-purple-950/40 p-8 text-center shadow-xl">
               <svg
@@ -461,10 +620,8 @@ export default function DocumentDetailPage() {
             </div>
           )}
 
-          {/* Chat Interface once Document is Indexed */}
           {isIndexed && (
             <div className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl h-[650px] overflow-hidden">
-              {/* Top Header */}
               <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
                 <div className="flex items-center gap-3">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -483,7 +640,6 @@ export default function DocumentDetailPage() {
                 </button>
               </div>
 
-              {/* Conversation Thread */}
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 {chatMessages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-slate-400">
@@ -512,7 +668,6 @@ export default function DocumentDetailPage() {
                       >
                         <p className="whitespace-pre-wrap leading-relaxed">{cleanedText}</p>
 
-                        {/* Source Page Citations for Assistant */}
                         {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
                           <div className="mt-3.5 border-t border-slate-800/80 pt-2.5 text-xs">
                             <span className="font-semibold text-slate-400 block mb-1.5">Sources:</span>
@@ -552,7 +707,6 @@ export default function DocumentDetailPage() {
                 )}
               </div>
 
-              {/* Source Snippet Preview Modal */}
               {activeSourcePreview && (
                 <div className="border-t border-indigo-900/80 bg-indigo-950/70 p-4 text-xs">
                   <div className="flex items-center justify-between font-bold text-indigo-300 mb-1.5">
@@ -570,7 +724,6 @@ export default function DocumentDetailPage() {
                 </div>
               )}
 
-              {/* Bottom Question Input Form */}
               <form onSubmit={handleSendQuestion} className="border-t border-slate-800 p-4 flex gap-3 bg-slate-950/80">
                 <input
                   type="text"
@@ -588,6 +741,423 @@ export default function DocumentDetailPage() {
                   Send
                 </button>
               </form>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Phase 6 Quizzes & Flashcards Tab */}
+      {activeTab === "study" && (
+        <section className="mt-6 space-y-6">
+          {/* Sub Navigation */}
+          <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
+            <button
+              onClick={() => setStudySubTab("quiz")}
+              className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${
+                studySubTab === "quiz"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              📝 Multiple-Choice Quizzes
+            </button>
+            <button
+              onClick={() => setStudySubTab("flashcard")}
+              className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${
+                studySubTab === "flashcard"
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              🎴 Flashcard Study Cards
+            </button>
+          </div>
+
+          {/* Quiz Subtab */}
+          {studySubTab === "quiz" && (
+            <div className="space-y-6">
+              {/* Active Quiz Player */}
+              {activeQuiz && (
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl space-y-6">
+                  {!quizCompleted && (
+                    <div>
+                      {/* Header */}
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-extrabold text-white">{activeQuiz.title}</h3>
+                            <span className="rounded-full bg-indigo-900/60 border border-indigo-700/50 px-2.5 py-0.5 text-xs font-semibold text-indigo-300 uppercase">
+                              {activeQuiz.difficulty}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Question {currentQuestionIdx + 1} of {activeQuiz.questions.length}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveQuiz(null)}
+                          className="text-xs text-slate-400 hover:text-white font-medium"
+                        >
+                          ✕ Exit Quiz
+                        </button>
+                      </div>
+
+                      {/* Question Text */}
+                      <div className="mt-5">
+                        <h4 className="text-base font-bold text-white leading-relaxed">
+                          {activeQuiz.questions[currentQuestionIdx].prompt}
+                        </h4>
+                      </div>
+
+                      {/* Options List */}
+                      <div className="mt-5 space-y-3">
+                        {(activeQuiz.questions[currentQuestionIdx].options || []).map((opt, oIdx) => {
+                          const currentQ = activeQuiz.questions[currentQuestionIdx];
+                          const isSelected = selectedOption === opt;
+                          const isCorrectOpt = opt === currentQ.correct_answer;
+
+                          let optionStyle = "border-slate-800 bg-slate-950 text-slate-200 hover:border-slate-700";
+                          if (isSelected) {
+                            optionStyle = "border-indigo-500 bg-indigo-950/60 text-white font-semibold";
+                          }
+                          if (isSubmitted) {
+                            if (isCorrectOpt) {
+                              optionStyle = "border-emerald-500 bg-emerald-950/70 text-emerald-100 font-bold";
+                            } else if (isSelected && !isCorrectOpt) {
+                              optionStyle = "border-red-500 bg-red-950/70 text-red-100 font-bold";
+                            }
+                          }
+
+                          return (
+                            <button
+                              key={oIdx}
+                              onClick={() => handleOptionSelect(opt)}
+                              disabled={isSubmitted}
+                              className={`w-full text-left rounded-xl border p-4 text-sm transition-all flex items-center justify-between ${optionStyle}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs font-extrabold">
+                                  {String.fromCharCode(65 + oIdx)}
+                                </span>
+                                <span>{opt}</span>
+                              </div>
+                              {isSubmitted && isCorrectOpt && (
+                                <span className="text-emerald-400 font-bold text-xs">✅ Correct</span>
+                              )}
+                              {isSubmitted && isSelected && !isCorrectOpt && (
+                                <span className="text-red-400 font-bold text-xs">❌ Incorrect</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Action Bar & Feedback */}
+                      <div className="mt-6 flex flex-col gap-4">
+                        {!isSubmitted && (
+                          <button
+                            onClick={handleSubmitQuestion}
+                            disabled={!selectedOption}
+                            className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-indigo-500 disabled:opacity-50 transition-all hover:scale-105"
+                          >
+                            Submit Answer
+                          </button>
+                        )}
+
+                        {isSubmitted && (
+                          <div className="rounded-xl border border-slate-800 bg-slate-950 p-5 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-sm">
+                                {selectedOption === activeQuiz.questions[currentQuestionIdx].correct_answer ? (
+                                  <span className="text-emerald-400">✅ Correct Answer!</span>
+                                ) : (
+                                  <span className="text-red-400">❌ Incorrect Answer</span>
+                                )}
+                              </span>
+                              {activeQuiz.questions[currentQuestionIdx].source_page && (
+                                <span className="rounded bg-purple-950 border border-purple-800 px-2 py-0.5 text-xs text-purple-300 font-semibold">
+                                  📄 Page {activeQuiz.questions[currentQuestionIdx].source_page}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                              <strong className="text-slate-100">Explanation:</strong>{" "}
+                              {activeQuiz.questions[currentQuestionIdx].explanation}
+                            </p>
+                            <button
+                              onClick={handleNextQuestion}
+                              className="mt-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-indigo-500 transition-colors"
+                            >
+                              {currentQuestionIdx + 1 < activeQuiz.questions.length
+                                ? "Next Question &rarr;"
+                                : "Finish Quiz & Show Score"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quiz Score Summary Screen */}
+                  {quizCompleted && (
+                    <div className="py-8 text-center space-y-4">
+                      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-indigo-900/60 border-2 border-indigo-500 text-3xl font-black text-indigo-300">
+                        {Math.round((score / activeQuiz.questions.length) * 100)}%
+                      </div>
+                      <h3 className="text-2xl font-extrabold text-white">Quiz Completed!</h3>
+                      <p className="text-sm text-slate-300">
+                        You scored <strong className="text-indigo-400">{score}</strong> out of{" "}
+                        <strong className="text-indigo-400">{activeQuiz.questions.length}</strong> questions correctly.
+                      </p>
+                      <div className="flex justify-center gap-3 pt-4">
+                        <button
+                          onClick={() => startQuiz(activeQuiz)}
+                          className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-indigo-500"
+                        >
+                          🔄 Retry Quiz
+                        </button>
+                        <button
+                          onClick={() => setActiveQuiz(null)}
+                          className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-700"
+                        >
+                          Back to Quizzes List
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Generator & Saved List when no quiz active */}
+              {!activeQuiz && (
+                <div className="grid gap-6 md:grid-cols-3">
+                  {/* Generator Controls */}
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl space-y-5 md:col-span-1">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      ⚡ Generate AI Quiz
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Create grounded multiple-choice practice tests sampled from your PDF document text.
+                    </p>
+
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                        Number of Questions
+                      </label>
+                      <select
+                        value={quizQuestionCount}
+                        onChange={(e) => setQuizQuestionCount(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      >
+                        <option value={5}>5 Questions</option>
+                        <option value={10}>10 Questions (Max)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                        Difficulty Level
+                      </label>
+                      <select
+                        value={quizDifficulty}
+                        onChange={(e) => setQuizDifficulty(e.target.value)}
+                        className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      >
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                      </select>
+                    </div>
+
+                    {quizError && (
+                      <div className="rounded-lg bg-red-950 p-3 text-xs text-red-200 border border-red-800">
+                        {quizError}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleGenerateQuiz}
+                      disabled={quizLoading}
+                      className="w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg hover:bg-indigo-500 disabled:opacity-50 transition-all hover:scale-105"
+                    >
+                      {quizLoading ? "Generating Quiz..." : "⚡ Generate AI Quiz"}
+                    </button>
+                  </div>
+
+                  {/* Saved Quizzes List */}
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl md:col-span-2 space-y-4">
+                    <h3 className="text-base font-bold text-white">Saved Practice Quizzes</h3>
+
+                    {quizzes.length === 0 && (
+                      <div className="py-12 text-center text-slate-400">
+                        <p className="text-sm font-medium">No quizzes generated for this document yet.</p>
+                        <p className="text-xs text-slate-500 mt-1">Use the generator panel to create your first quiz.</p>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {quizzes.map((q) => (
+                        <div
+                          key={q.id}
+                          onClick={() => startQuiz(q)}
+                          className="group flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4 shadow-sm hover:border-indigo-500 hover:bg-slate-900 transition-all cursor-pointer"
+                        >
+                          <div>
+                            <h4 className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">
+                              {q.title}
+                            </h4>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {q.questions.length} Questions • Difficulty:{" "}
+                              <span className="font-semibold text-slate-300 uppercase">{q.difficulty}</span>
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={(e) => handleDeleteQuiz(q.id, e)}
+                              className="text-xs text-red-400 hover:text-red-300 font-semibold px-2 py-1"
+                            >
+                              Delete
+                            </button>
+                            <span className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white group-hover:bg-indigo-500">
+                              Start Quiz &rarr;
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Flashcard Subtab */}
+          {studySubTab === "flashcard" && (
+            <div className="space-y-6">
+              {/* Generator Header */}
+              <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    ⚡ Generate AI Study Flashcards
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Extract key terminology, formulas, and concepts into interactive flip cards.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={flashcardCount}
+                    onChange={(e) => setFlashcardCount(Number(e.target.value))}
+                    className="rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white focus:border-purple-500 focus:outline-none"
+                  >
+                    <option value={5}>5 Cards</option>
+                    <option value={10}>10 Cards</option>
+                    <option value={20}>20 Cards (Max)</option>
+                  </select>
+                  <button
+                    onClick={handleGenerateFlashcards}
+                    disabled={flashcardLoading}
+                    className="rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-purple-500 disabled:opacity-50 transition-all hover:scale-105"
+                  >
+                    {flashcardLoading ? "Generating..." : "⚡ Generate Cards"}
+                  </button>
+                </div>
+              </div>
+
+              {flashcardError && (
+                <div className="rounded-xl bg-red-950 p-4 text-xs text-red-200 border border-red-800">
+                  {flashcardError}
+                </div>
+              )}
+
+              {/* Flashcard Viewer */}
+              {flashcards.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/90 p-12 text-center shadow-xl">
+                  <p className="text-base font-semibold text-white">No flashcards available</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                    Generate study flashcards from your PDF document to practice key terms and definitions.
+                  </p>
+                </div>
+              )}
+
+              {flashcards.length > 0 && (
+                <div className="space-y-6">
+                  {/* Card Container */}
+                  <div className="relative mx-auto max-w-xl">
+                    <div
+                      onClick={() => setIsCardFlipped((prev) => !prev)}
+                      className={`relative min-h-[300px] w-full rounded-2xl border p-8 shadow-2xl transition-all duration-500 cursor-pointer flex flex-col justify-between ${
+                        isCardFlipped
+                          ? "border-indigo-500 bg-indigo-950/90 text-indigo-100"
+                          : "border-purple-800/80 bg-purple-950/80 text-purple-100"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs font-bold uppercase tracking-wider opacity-75">
+                        <span>{isCardFlipped ? "Back — Answer / Definition" : "Front — Term / Question"}</span>
+                        <span>Click to Flip 🔄</span>
+                      </div>
+
+                      <div className="my-auto py-6 text-center">
+                        <p className="text-lg font-bold leading-relaxed">
+                          {isCardFlipped
+                            ? flashcards[currentCardIdx].back
+                            : flashcards[currentCardIdx].front}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs opacity-75">
+                        <span>
+                          {flashcards[currentCardIdx].source_page && (
+                            <span className="rounded bg-black/30 px-2 py-0.5 font-mono">
+                              📄 Page {flashcards[currentCardIdx].source_page}
+                            </span>
+                          )}
+                        </span>
+                        <span>Card {currentCardIdx + 1} of {flashcards.length}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Navigation Controls */}
+                  <div className="flex items-center justify-center gap-4">
+                    <button
+                      onClick={() => {
+                        setIsCardFlipped(false);
+                        setCurrentCardIdx((prev) => Math.max(0, prev - 1));
+                      }}
+                      disabled={currentCardIdx === 0}
+                      className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-slate-700 disabled:opacity-50"
+                    >
+                      &larr; Previous Card
+                    </button>
+                    <button
+                      onClick={handleShuffleFlashcards}
+                      className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-bold text-purple-300 shadow-md hover:bg-slate-700"
+                    >
+                      🔀 Shuffle Cards
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsCardFlipped(false);
+                        setCurrentCardIdx((prev) => Math.min(flashcards.length - 1, prev + 1));
+                      }}
+                      disabled={currentCardIdx === flashcards.length - 1}
+                      className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-slate-700 disabled:opacity-50"
+                    >
+                      Next Card &rarr;
+                    </button>
+                  </div>
+
+                  <div className="text-center pt-2">
+                    <button
+                      onClick={() => handleDeleteFlashcard(flashcards[currentCardIdx].id)}
+                      className="text-xs text-red-400 hover:text-red-300 font-semibold"
+                    >
+                      Delete Current Card
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </section>

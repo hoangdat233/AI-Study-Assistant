@@ -4,7 +4,9 @@ import {
   ChatMessage,
   DocumentDetailItem,
   DocumentItem,
+  FlashcardItem,
   IndexResponseData,
+  QuizItem,
   SourceMetadata,
   SummaryItem,
 } from "@/types";
@@ -96,5 +98,63 @@ export async function getChatHistory(documentId: string): Promise<ChatMessage[]>
 
   return apiGet<ChatMessage[]>(`/api/documents/${documentId}/chat`, { token });
 }
+
+export async function generateQuiz(
+  documentId: string,
+  questionCount: number = 5,
+  difficulty: string = "medium"
+): Promise<QuizItem> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiPost<QuizItem, { question_count: number; difficulty: string }>(
+    `/api/documents/${documentId}/quizzes`,
+    { question_count: questionCount, difficulty },
+    { token }
+  );
+}
+
+export async function getDocumentQuizzes(documentId: string): Promise<QuizItem[]> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiGet<QuizItem[]>(`/api/documents/${documentId}/quizzes`, { token });
+}
+
+export async function deleteQuiz(quizId: string): Promise<void> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiDelete(`/api/quizzes/${quizId}`, { token });
+}
+
+export async function generateFlashcards(
+  documentId: string,
+  cardCount: number = 10
+): Promise<FlashcardItem[]> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiPost<FlashcardItem[], { card_count: number }>(
+    `/api/documents/${documentId}/flashcards`,
+    { card_count: cardCount },
+    { token }
+  );
+}
+
+export async function getDocumentFlashcards(documentId: string): Promise<FlashcardItem[]> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiGet<FlashcardItem[]>(`/api/documents/${documentId}/flashcards`, { token });
+}
+
+export async function deleteFlashcard(flashcardId: string): Promise<void> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiDelete(`/api/flashcards/${flashcardId}`, { token });
+}
+
 
 

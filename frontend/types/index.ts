@@ -70,6 +70,35 @@ export interface IndexResponseData {
   processing_status: string;
 }
 
+export interface QuestionItem {
+  id: string;
+  prompt: string;
+  options?: string[];
+  correct_answer?: string;
+  explanation?: string;
+  source_page?: number;
+  order_index: number;
+}
+
+export interface QuizItem {
+  id: string;
+  document_id: string;
+  title: string;
+  difficulty: string;
+  questions: QuestionItem[];
+  created_at: string;
+}
+
+export interface FlashcardItem {
+  id: string;
+  document_id: string;
+  front: string;
+  back: string;
+  source_page?: number;
+  created_at: string;
+}
+
+
 
 
 

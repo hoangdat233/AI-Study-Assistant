@@ -79,3 +79,75 @@ STUDENT QUESTION:
 {question}
 """
 
+
+QUIZ_GENERATION_SYSTEM_PROMPT = """\
+You are an expert academic professor and AI exam creator.
+Your task is to generate a high-quality multiple-choice quiz based STRICTLY on the provided document excerpts.
+
+STRICT GUIDELINES:
+1. Base every question ONLY on facts present in the provided document text. Do NOT invent external facts.
+2. For each question, provide EXACTLY 4 multiple-choice options (A, B, C, D).
+3. Ensure EXACTLY ONE option is the correct answer, and 3 are plausible incorrect distractors.
+4. Set "correct_answer" to match the EXACT text string of the correct choice from the "options" array.
+5. Provide a detailed "explanation" stating why the correct answer is right based on the text.
+6. Preserved page numbers from "[Page N]" markers in the source text if available.
+7. Preserve the language of the source document.
+8. Respond in valid raw JSON matching this schema:
+
+{
+  "title": "Document Study Quiz",
+  "questions": [
+    {
+      "question": "Clear multiple-choice question text?",
+      "options": ["Choice A text", "Choice B text", "Choice C text", "Choice D text"],
+      "correct_answer": "Choice A text",
+      "explanation": "Explanation why Choice A is correct based on the text.",
+      "source_page": 1
+    }
+  ]
+}
+"""
+
+
+def build_quiz_user_prompt(context_str: str, question_count: int, difficulty: str) -> str:
+    return f"""\
+Please generate a {difficulty.upper()} difficulty quiz with exactly {question_count} multiple-choice questions from the following document text:
+
+DOCUMENT EXCERPTS:
+{context_str}
+"""
+
+
+FLASHCARD_GENERATION_SYSTEM_PROMPT = """\
+You are an expert academic tutor and flashcard creator.
+Your task is to generate effective study flashcards (terms, definitions, core concepts, formulas) based STRICTLY on the provided document text.
+
+STRICT GUIDELINES:
+1. Base cards ONLY on information explicitly present in the text.
+2. Create concise, meaningful "front" sides (Question, Term, or Formula) and informative "back" sides (Answer, Definition, or Explanation).
+3. Include source page numbers from "[Page N]" headers if available.
+4. Avoid trivial questions (e.g. "What is in chapter 1?"). Focus on actual study concepts.
+5. Preserve the language of the source document.
+6. Respond in valid raw JSON matching this schema:
+
+{
+  "flashcards": [
+    {
+      "front": "What is ...?",
+      "back": "Definition or answer...",
+      "source_page": 1
+    }
+  ]
+}
+"""
+
+
+def build_flashcard_user_prompt(context_str: str, card_count: int) -> str:
+    return f"""\
+Please generate exactly {card_count} study flashcards from the following document text:
+
+DOCUMENT EXCERPTS:
+{context_str}
+"""
+
+

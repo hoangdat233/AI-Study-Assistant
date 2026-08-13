@@ -1,6 +1,7 @@
 import uuid
+from typing import Any
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,6 +18,7 @@ class Quiz(Base, TimestampMixin):
         ForeignKey("documents.id", ondelete="CASCADE"), index=True
     )
     title: Mapped[str] = mapped_column(String(255))
+    difficulty: Mapped[str] = mapped_column(String(50), default="medium")
 
     user = relationship("User", back_populates="quizzes")
     document = relationship("Document", back_populates="quizzes")
@@ -30,7 +32,11 @@ class Question(Base, TimestampMixin):
     quiz_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("quizzes.id", ondelete="CASCADE"), index=True)
     prompt: Mapped[str] = mapped_column(Text)
     answer: Mapped[str] = mapped_column(Text)
-    order_index: Mapped[int] = mapped_column(Integer)
+    options: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    correct_answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_page: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, default=0)
     is_correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     quiz = relationship("Quiz", back_populates="questions")
