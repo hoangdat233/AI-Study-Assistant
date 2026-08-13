@@ -5,10 +5,15 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-ai_study_assistant}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # Use md5 auth for local dev so psycopg3 on Windows can connect.
+      # scram-sha-256 is preferred for production; change before deploying.
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      # Host port 5433 avoids conflict with any locally-installed PostgreSQL.
+      - "5433:5432"
 
   backend:
     build:
