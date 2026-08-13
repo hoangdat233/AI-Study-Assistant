@@ -26,3 +26,20 @@ export interface TokenResponse {
   token_type: string;
 }
 
+export interface DocumentItem {
+  id: string;
+  title: string;
+  original_filename: string;
+  file_size: number;
+  page_count: number | null;
+  processing_status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocumentDetailItem extends DocumentItem {
+  extracted_text: string | null;
+  content_summary: string | null;
+}
+
+

@@ -114,3 +114,26 @@ def test_get_me_success(client):
     assert data["email"] == "me@example.com"
     assert data["full_name"] == "Me Myself"
     assert "id" in data
+
+
+def test_register_password_too_long(client):
+    oversized_password = "a" * 73
+    payload = {
+        "email": "longpwd@example.com",
+        "password": oversized_password,
+        "full_name": "Long Password User",
+    }
+    response = client.post("/api/auth/register", json=payload)
+    assert response.status_code == 400
+    assert "Password exceeds maximum length" in response.json()["detail"]
+
+
+def test_login_password_too_long(client):
+    oversized_password = "a" * 73
+    response = client.post(
+        "/api/auth/login",
+        json={"email": "anyuser@example.com", "password": oversized_password},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect email or password"
+

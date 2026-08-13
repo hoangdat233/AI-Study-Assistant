@@ -15,8 +15,14 @@ class Document(Base, TimestampMixin):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     title: Mapped[str] = mapped_column(String(255), index=True)
+    original_filename: Mapped[str] = mapped_column(String(255))
     file_path: Mapped[str] = mapped_column(String(500))
+    file_size: Mapped[int] = mapped_column(Integer)
+    page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    processing_status: Mapped[str] = mapped_column(String(32), default="COMPLETED")
+
 
     owner = relationship("User", back_populates="documents")
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")

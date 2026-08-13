@@ -24,7 +24,13 @@ def register(payload: RegisterRequest, db: Annotated[Session, Depends(get_db)]) 
         )
 
     # 2. Hash password and save new user
-    hashed_pwd = security.hash_password(payload.password)
+    try:
+        hashed_pwd = security.hash_password(payload.password)
+    except ValueError as err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(err),
+        )
     user = User(
         email=payload.email,
         hashed_password=hashed_pwd,
@@ -35,6 +41,7 @@ def register(payload: RegisterRequest, db: Annotated[Session, Depends(get_db)]) 
     db.refresh(user)
 
     return UserResponse.model_validate(user)
+
 
 
 @router.post("/login", response_model=TokenResponse)
