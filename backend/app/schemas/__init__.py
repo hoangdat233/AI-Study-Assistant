@@ -1,4 +1,5 @@
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.schemas.chat import ChatMessageRequest, ChatMessageResponse, IndexResponse, MessageItem
 from app.schemas.document import DocumentDetailResponse, DocumentResponse
 from app.schemas.summary import SummaryResponse
 
@@ -10,7 +11,12 @@ __all__ = [
     "DocumentResponse",
     "DocumentDetailResponse",
     "SummaryResponse",
+    "ChatMessageRequest",
+    "ChatMessageResponse",
+    "IndexResponse",
+    "MessageItem",
 ]
+
 
 
 

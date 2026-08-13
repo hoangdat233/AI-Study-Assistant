@@ -1,6 +1,13 @@
 import { apiDelete, apiGet, apiPost, apiUpload } from "@/lib/api-client";
 import { getToken } from "@/services/auth-service";
-import { DocumentDetailItem, DocumentItem, SummaryItem } from "@/types";
+import {
+  ChatMessage,
+  DocumentDetailItem,
+  DocumentItem,
+  IndexResponseData,
+  SourceMetadata,
+  SummaryItem,
+} from "@/types";
 
 export async function uploadDocument(file: File): Promise<DocumentDetailItem> {
   const token = getToken();
@@ -54,4 +61,40 @@ export async function generateDocumentSummary(
     { token }
   );
 }
+
+export async function indexDocument(
+  documentId: string,
+  force: boolean = false
+): Promise<IndexResponseData> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  const query = force ? "?force=true" : "";
+  return apiPost<IndexResponseData, undefined>(
+    `/api/documents/${documentId}/index${query}`,
+    undefined,
+    { token }
+  );
+}
+
+export async function sendChatMessage(
+  documentId: string,
+  question: string
+): Promise<{ answer: string; sources: SourceMetadata[]; chat_id: string }> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiPost<
+    { answer: string; sources: SourceMetadata[]; chat_id: string },
+    { question: string }
+  >(`/api/documents/${documentId}/chat`, { question }, { token });
+}
+
+export async function getChatHistory(documentId: string): Promise<ChatMessage[]> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiGet<ChatMessage[]>(`/api/documents/${documentId}/chat`, { token });
+}
+
 

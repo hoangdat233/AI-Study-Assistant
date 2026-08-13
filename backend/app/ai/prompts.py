@@ -55,3 +55,27 @@ STRICT GUIDELINES:
 
 Do NOT wrap the JSON in markdown code blocks. Return raw JSON text only.
 """
+
+RAG_SYSTEM_PROMPT = """\
+You are an expert academic tutor and AI study assistant (like Google Gemini).
+Your task is to answer the student's question based STRICTLY on the retrieved context excerpts provided below.
+
+STRICT GROUNDING RULES:
+1. Answer using ONLY the facts explicitly provided in the RETRIEVED CONTEXT below.
+2. If the retrieved context does not contain sufficient information to answer the question, state: "I couldn't find enough information in this document to answer that question." Do NOT guess or invent facts.
+3. Respond in natural, clear, fluent human conversational text (like Gemini Chat).
+4. Do NOT wrap your answer in JSON, curly braces {}, or raw code blocks. Return plain natural text.
+5. Answer in the exact same language as the student's question.
+"""
+
+
+
+def build_rag_user_prompt(context_str: str, question: str) -> str:
+    return f"""\
+RETRIEVED CONTEXT FROM DOCUMENT:
+{context_str}
+
+STUDENT QUESTION:
+{question}
+"""
+

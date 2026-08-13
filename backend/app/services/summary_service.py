@@ -138,7 +138,9 @@ class SummaryService:
         # 3. Process text (Direct vs Map-Reduce)
         if len(text) <= CHUNK_CHARACTER_THRESHOLD:
             user_prompt = build_user_summary_prompt(text)
-            raw_output = active_provider.generate_text(SUMMARY_SYSTEM_PROMPT, user_prompt)
+            raw_output = active_provider.generate_text(
+                SUMMARY_SYSTEM_PROMPT, user_prompt, response_mime_type="application/json"
+            )
             summary_obj = self._parse_and_validate_summary(raw_output)
         else:
             # Map Stage: Summarize individual text chunks
@@ -147,7 +149,7 @@ class SummaryService:
             for chunk in chunks:
                 user_prompt = build_user_summary_prompt(chunk)
                 chunk_output = active_provider.generate_text(
-                    SUMMARY_SYSTEM_PROMPT, user_prompt
+                    SUMMARY_SYSTEM_PROMPT, user_prompt, response_mime_type="application/json"
                 )
                 intermediate_summaries.append(chunk_output)
 
@@ -155,9 +157,10 @@ class SummaryService:
             combined_text = "\n\n".join(intermediate_summaries)
             user_prompt = f"Please combine and synthesize these section summaries into one final structured summary:\n\n{combined_text}"
             final_raw_output = active_provider.generate_text(
-                MAP_REDUCE_COMBINE_SYSTEM_PROMPT, user_prompt
+                MAP_REDUCE_COMBINE_SYSTEM_PROMPT, user_prompt, response_mime_type="application/json"
             )
             summary_obj = self._parse_and_validate_summary(final_raw_output)
+
 
         # 4. Save summary to database
         summary_json_str = summary_obj.model_dump_json()

@@ -49,5 +49,27 @@ export interface SummaryItem {
   conclusion: string;
 }
 
+export interface SourceMetadata {
+  page: number;
+  chunk_id: string;
+  preview: string;
+  score?: number;
+}
+
+export interface ChatMessage {
+  id?: string;
+  role: "user" | "assistant";
+  content: string;
+  sources?: SourceMetadata[];
+  created_at?: string;
+}
+
+export interface IndexResponseData {
+  indexed: boolean;
+  chunk_count: number;
+  processing_status: string;
+}
+
+
 
 

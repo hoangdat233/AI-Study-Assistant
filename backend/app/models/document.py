@@ -45,7 +45,9 @@ class DocumentChunk(Base, TimestampMixin):
         ForeignKey("documents.id", ondelete="CASCADE"), index=True
     )
     chunk_index: Mapped[int] = mapped_column(Integer)
+    page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     content: Mapped[str] = mapped_column(Text)
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(3072), nullable=True)
 
     document = relationship("Document", back_populates="chunks")
+

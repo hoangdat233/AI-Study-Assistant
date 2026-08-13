@@ -16,7 +16,9 @@ class GeminiProvider(BaseLLMProvider):
         self.model = model or settings.llm_model or "gemini-3.5-flash"
 
 
-    def generate_text(self, system_prompt: str, user_prompt: str) -> str:
+    def generate_text(
+        self, system_prompt: str, user_prompt: str, response_mime_type: str | None = None
+    ) -> str:
         if (
             not self.api_key
             or "YOUR_GEMINI_API_KEY" in self.api_key
@@ -30,13 +32,14 @@ class GeminiProvider(BaseLLMProvider):
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
         headers = {"Content-Type": "application/json"}
 
+        gen_config: dict[str, Any] = {"temperature": 0.2}
+        if response_mime_type:
+            gen_config["response_mime_type"] = response_mime_type
+
         payload: dict[str, Any] = {
             "system_instruction": {"parts": [{"text": system_prompt}]},
             "contents": [{"parts": [{"text": user_prompt}]}],
-            "generationConfig": {
-                "temperature": 0.2,
-                "response_mime_type": "application/json",
-            },
+            "generationConfig": gen_config,
         }
 
         try:
@@ -95,26 +98,30 @@ class GeminiProvider(BaseLLMProvider):
             )
 
 
-
 class MockLLMProvider(BaseLLMProvider):
     """Mock LLM provider for isolated testing without paid external API calls."""
 
-    def generate_text(self, system_prompt: str, user_prompt: str) -> str:
-        return json.dumps(
-            {
-                "overview": "This document covers core principles of software engineering and design patterns.",
-                "key_points": [
-                    "Modularity improves code maintainability and testability.",
-                    "Dependency injection decouples core components from external services.",
-                    "Layered architecture separates presentation, business logic, and storage.",
-                ],
-                "important_terms": [
-                    "Dependency Injection: Passing services as parameters rather than hardcoding them.",
-                    "Encapsulation: Restricting direct access to internal component state.",
-                ],
-                "conclusion": "Adhering to these design principles leads to robust, scalable software systems.",
-            }
-        )
+    def generate_text(
+        self, system_prompt: str, user_prompt: str, response_mime_type: str | None = None
+    ) -> str:
+        if response_mime_type == "application/json":
+            return json.dumps(
+                {
+                    "overview": "This document covers core principles of software engineering and design patterns.",
+                    "key_points": [
+                        "Modularity improves code maintainability and testability.",
+                        "Dependency injection decouples core components from external services.",
+                        "Layered architecture separates presentation, business logic, and storage.",
+                    ],
+                    "important_terms": [
+                        "Dependency Injection: Passing services as parameters rather than hardcoding them.",
+                        "Encapsulation: Restricting direct access to internal component state.",
+                    ],
+                    "conclusion": "Adhering to these design principles leads to robust, scalable software systems.",
+                }
+            )
+        return "Based on the retrieved document context, software engineering emphasizes systematic design patterns and modularity."
+
 
 
 def get_llm_provider() -> BaseLLMProvider:
