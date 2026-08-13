@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,6 +23,7 @@ class Quiz(Base, TimestampMixin):
     user = relationship("User", back_populates="quizzes")
     document = relationship("Document", back_populates="quizzes")
     questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan")
+    attempts = relationship("QuizAttempt", back_populates="quiz", cascade="all, delete-orphan")
 
 
 class Question(Base, TimestampMixin):
@@ -40,3 +41,17 @@ class Question(Base, TimestampMixin):
     is_correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     quiz = relationship("Quiz", back_populates="questions")
+
+
+class QuizAttempt(Base, TimestampMixin):
+    __tablename__ = "quiz_attempts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    quiz_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("quizzes.id", ondelete="CASCADE"), index=True)
+    score: Mapped[int] = mapped_column(Integer)
+    total_questions: Mapped[int] = mapped_column(Integer)
+    percentage: Mapped[float] = mapped_column(Float)
+
+    user = relationship("User")
+    quiz = relationship("Quiz", back_populates="attempts")

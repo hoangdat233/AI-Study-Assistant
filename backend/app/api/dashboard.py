@@ -9,11 +9,11 @@ from app.models.user import User
 from app.schemas.progress import DashboardResponse
 from app.services.dashboard_service import dashboard_service
 
-router = APIRouter(prefix="/progress", tags=["progress"])
+router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("", response_model=DashboardResponse)
-def get_user_progress_endpoint(
+def get_user_dashboard_endpoint(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ) -> DashboardResponse:

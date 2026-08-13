@@ -98,6 +98,49 @@ export interface FlashcardItem {
   created_at: string;
 }
 
+export interface DashboardStats {
+  documents: number;
+  questions_asked: number;
+  quizzes_completed: number;
+  average_quiz_score: number;
+  flashcards: number;
+}
+
+export interface RecentActivityItem {
+  id: string;
+  type: "upload" | "chat" | "quiz_gen" | "quiz_attempt" | "flashcard";
+  title: string;
+  description: string;
+  timestamp: string;
+}
+
+export interface DashboardData {
+  stats: DashboardStats;
+  recent_documents: DocumentItem[];
+  recent_activity: RecentActivityItem[];
+}
+
+export interface QuestionAttemptResult {
+  question_id: string;
+  prompt: string;
+  selected_option: string | null;
+  correct_answer: string;
+  is_correct: boolean;
+  explanation: string | null;
+  source_page: number | null;
+}
+
+export interface QuizAttemptResult {
+  id: string;
+  quiz_id: string;
+  score: number;
+  total_questions: number;
+  percentage: number;
+  details: QuestionAttemptResult[];
+  created_at: string;
+}
+
+
 
 
 

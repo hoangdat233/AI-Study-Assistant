@@ -2,14 +2,17 @@ import { apiDelete, apiGet, apiPost, apiUpload } from "@/lib/api-client";
 import { getToken } from "@/services/auth-service";
 import {
   ChatMessage,
+  DashboardData,
   DocumentDetailItem,
   DocumentItem,
   FlashcardItem,
   IndexResponseData,
+  QuizAttemptResult,
   QuizItem,
   SourceMetadata,
   SummaryItem,
 } from "@/types";
+
 
 export async function uploadDocument(file: File): Promise<DocumentDetailItem> {
   const token = getToken();
@@ -155,6 +158,28 @@ export async function deleteFlashcard(flashcardId: string): Promise<void> {
 
   return apiDelete(`/api/flashcards/${flashcardId}`, { token });
 }
+
+export async function getDashboard(): Promise<DashboardData> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiGet<DashboardData>("/api/dashboard", { token });
+}
+
+export async function submitQuizAttempt(
+  quizId: string,
+  answers: Record<string, string>
+): Promise<QuizAttemptResult> {
+  const token = getToken();
+  if (!token) throw new Error("No authentication token found");
+
+  return apiPost<QuizAttemptResult, { answers: Record<string, string> }>(
+    `/api/quizzes/${quizId}/attempts`,
+    { answers },
+    { token }
+  );
+}
+
 
 
 

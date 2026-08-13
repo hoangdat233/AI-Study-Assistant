@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.user import User
+from app.schemas.progress import QuizAttemptCreateRequest, QuizAttemptResponse
 from app.schemas.quiz import QuizCreateRequest, QuizResponse
+from app.services.dashboard_service import dashboard_service
 from app.services.document_service import document_service
 from app.services.quiz_service import quiz_service
 
@@ -63,6 +65,23 @@ def get_quiz_endpoint(
             detail="Quiz not found",
         )
     return QuizResponse.model_validate(quiz)
+
+
+@router.post("/quizzes/{quiz_id}/attempts", status_code=status.HTTP_201_CREATED, response_model=QuizAttemptResponse)
+def submit_quiz_attempt_endpoint(
+    quiz_id: uuid.UUID,
+    body: QuizAttemptCreateRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+) -> QuizAttemptResponse:
+    quiz = quiz_service.get_quiz_by_id(db, current_user.id, quiz_id)
+    if not quiz:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz not found",
+        )
+
+    return dashboard_service.submit_quiz_attempt(db, current_user, quiz, body.answers)
 
 
 @router.delete("/quizzes/{quiz_id}", status_code=status.HTTP_204_NO_CONTENT)

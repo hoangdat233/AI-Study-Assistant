@@ -19,7 +19,9 @@ import {
   getDocumentSummary,
   indexDocument,
   sendChatMessage,
+  submitQuizAttempt,
 } from "@/services/document-service";
+
 import {
   ChatMessage,
   DocumentDetailItem,
@@ -71,6 +73,8 @@ export default function DocumentDetailPage() {
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [score, setScore] = useState<number>(0);
   const [quizCompleted, setQuizCompleted] = useState<boolean>(false);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
+
 
   // Phase 6 Flashcard State
   const [flashcards, setFlashcards] = useState<FlashcardItem[]>([]);
@@ -226,12 +230,14 @@ export default function DocumentDetailPage() {
   }
 
   function startQuiz(quiz: QuizItem) {
+
     setActiveQuiz(quiz);
     setCurrentQuestionIdx(0);
     setSelectedOption(null);
     setIsSubmitted(false);
     setScore(0);
     setQuizCompleted(false);
+    setQuizAnswers({});
   }
 
   function handleOptionSelect(opt: string) {
@@ -242,6 +248,9 @@ export default function DocumentDetailPage() {
   function handleSubmitQuestion() {
     if (!selectedOption || !activeQuiz) return;
     const currentQ = activeQuiz.questions[currentQuestionIdx];
+    const newAnswers = { ...quizAnswers, [currentQ.id]: selectedOption };
+    setQuizAnswers(newAnswers);
+
     const isCorrect = selectedOption === currentQ.correct_answer;
     if (isCorrect) {
       setScore((prev) => prev + 1);
@@ -249,7 +258,7 @@ export default function DocumentDetailPage() {
     setIsSubmitted(true);
   }
 
-  function handleNextQuestion() {
+  async function handleNextQuestion() {
     if (!activeQuiz) return;
     if (currentQuestionIdx + 1 < activeQuiz.questions.length) {
       setCurrentQuestionIdx((prev) => prev + 1);
@@ -257,8 +266,15 @@ export default function DocumentDetailPage() {
       setIsSubmitted(false);
     } else {
       setQuizCompleted(true);
+      // Persist completed quiz attempt to backend
+      try {
+        await submitQuizAttempt(activeQuiz.id, quizAnswers);
+      } catch {
+        // Fallback
+      }
     }
   }
+
 
   async function handleDeleteQuiz(quizId: string, e: React.MouseEvent) {
     e.stopPropagation();
