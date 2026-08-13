@@ -42,4 +42,12 @@ export interface DocumentDetailItem extends DocumentItem {
   content_summary: string | null;
 }
 
+export interface SummaryItem {
+  overview: string;
+  key_points: string[];
+  important_terms: string[];
+  conclusion: string;
+}
+
+
 

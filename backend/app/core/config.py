@@ -24,5 +24,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 60
 
+    llm_provider: str = "gemini"
+    llm_api_key: str | None = None
+    llm_model: str = "gemini-3.5-flash"
+
+
+
+
 
 settings = Settings()

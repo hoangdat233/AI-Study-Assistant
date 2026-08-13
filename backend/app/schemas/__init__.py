@@ -1,5 +1,6 @@
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.schemas.document import DocumentDetailResponse, DocumentResponse
+from app.schemas.summary import SummaryResponse
 
 __all__ = [
     "RegisterRequest",
@@ -8,6 +9,8 @@ __all__ = [
     "UserResponse",
     "DocumentResponse",
     "DocumentDetailResponse",
+    "SummaryResponse",
 ]
+
 
 

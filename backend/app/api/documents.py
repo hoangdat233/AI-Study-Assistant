@@ -8,7 +8,9 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.document import DocumentDetailResponse, DocumentResponse
+from app.schemas.summary import SummaryResponse
 from app.services.document_service import document_service
+from app.services.summary_service import summary_service
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -61,4 +63,44 @@ def delete_document(
             detail="Document not found",
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{document_id}/summary", response_model=SummaryResponse)
+def get_document_summary(
+    document_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+) -> SummaryResponse:
+    doc = document_service.get_user_document_by_id(db, current_user.id, document_id)
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    summary = summary_service.get_existing_summary(doc)
+    if not summary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No summary has been generated for this document yet.",
+        )
+    return summary
+
+
+@router.post("/{document_id}/summary", response_model=SummaryResponse)
+def generate_document_summary(
+    document_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+    force: bool = False,
+) -> SummaryResponse:
+    doc = document_service.get_user_document_by_id(db, current_user.id, document_id)
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    return summary_service.generate_summary(db, doc, force_regenerate=force)
+
 
