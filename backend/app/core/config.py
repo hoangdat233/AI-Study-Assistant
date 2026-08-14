@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Resolve the .env file relative to this file's location:
@@ -12,7 +12,10 @@ _ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=str(_ENV_FILE), env_file_encoding="utf-8", extra="ignore"
+        env_file=str(_ENV_FILE),
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
     )
 
     app_name: str = "AI Study Assistant API"
@@ -29,26 +32,15 @@ class Settings(BaseSettings):
     llm_api_key: str | None = None
     llm_model: str = "gemini-3.5-flash"
 
-    # Store as plain string; parse to list via property.
-    # This avoids pydantic_settings v2 attempting JSON deserialization before our validator.
-    cors_origins_raw: str = Field(
+    # Plain string — pydantic_settings will never try to JSON-decode a str field.
+    # Parsed into a list via get_cors_origins() method used by main.py.
+    cors_origins: str = Field(
         default="http://localhost:3000,http://127.0.0.1:3000",
-        alias="cors_origins",
-        description="Comma-separated list of allowed CORS origins",
     )
 
-    model_config = SettingsConfigDict(
-        env_file=str(_ENV_FILE),
-        env_file_encoding="utf-8",
-        extra="ignore",
-        populate_by_name=True,
-    )
-
-    @property
-    def cors_origins(self) -> list[str]:
-        """Parse comma-separated CORS_ORIGINS env var into a list."""
-        raw = self.cors_origins_raw or ""
-        return [origin.strip() for origin in raw.split(",") if origin.strip()]
+    def get_cors_origins(self) -> list[str]:
+        """Return CORS_ORIGINS as a list, splitting on commas."""
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     @field_validator("database_url", mode="before")
     @classmethod
