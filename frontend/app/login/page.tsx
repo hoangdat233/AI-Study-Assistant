@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-
 import { loginUser } from "@/services/auth-service";
 
 function LoginForm() {
@@ -37,73 +36,178 @@ function LoginForm() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sign in to your account</h1>
-      <p className="mt-1 text-sm text-slate-600">Access your study materials and AI assistant</p>
+    <div style={{ minHeight: "100vh", display: "flex", fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      {/* Left panel — branding */}
+      <div style={{
+        flex: "0 0 45%",
+        background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        padding: "60px 56px",
+        color: "white",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "rgba(139,92,246,0.25)" }} />
+        <div style={{ position: "absolute", bottom: -40, left: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(99,102,241,0.2)" }} />
 
-      {isRegisteredSuccess && (
-        <div className="mt-4 rounded-md bg-green-50 p-3 text-sm font-medium text-green-800 border border-green-200">
-          Account created successfully! Please sign in.
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 48 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg, #a78bfa, #818cf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+              📚
+            </div>
+            <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.3px" }}>AI Study Assistant</span>
+          </div>
+
+          <h2 style={{ fontSize: 36, fontWeight: 800, lineHeight: 1.15, marginBottom: 16, letterSpacing: "-0.5px" }}>
+            Welcome back!
+          </h2>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.7)", lineHeight: 1.7, marginBottom: 48 }}>
+            Continue your AI-powered learning journey. Your documents and progress are waiting for you.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {[
+              { icon: "🔒", title: "Secure & Private", desc: "Your data is encrypted end-to-end" },
+              { icon: "⚡", title: "Instant Access", desc: "Resume exactly where you left off" },
+              { icon: "📊", title: "Track Progress", desc: "See your study stats and streaks" },
+            ].map((f) => (
+              <div key={f.title} style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                  {f.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{f.title}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      )}
+      </div>
 
-      {error && (
-        <div className="mt-4 rounded-md bg-red-50 p-3 text-sm font-medium text-red-800 border border-red-200">
-          {error}
+      {/* Right panel — form */}
+      <div style={{
+        flex: 1,
+        background: "#f8fafc",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "40px 40px",
+      }}>
+        <div style={{ width: "100%", maxWidth: 420 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0f172a", marginBottom: 6, letterSpacing: "-0.4px" }}>
+            Sign in to your account
+          </h1>
+          <p style={{ fontSize: 14, color: "#64748b", marginBottom: 28 }}>
+            Access your study materials and AI assistant
+          </p>
+
+          {isRegisteredSuccess && (
+            <div style={{
+              marginBottom: 20,
+              padding: "12px 14px",
+              borderRadius: 10,
+              background: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              color: "#16a34a",
+              fontSize: 13,
+              fontWeight: 500,
+            }}>
+              ✅ Account created! Please sign in.
+            </div>
+          )}
+
+          {error && (
+            <div style={{
+              marginBottom: 20,
+              padding: "12px 14px",
+              borderRadius: 10,
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              color: "#dc2626",
+              fontSize: 13,
+              fontWeight: 500,
+            }}>
+              ⚠️ {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {[
+              { label: "Email address", type: "email", value: email, setter: setEmail, placeholder: "jane@example.com" },
+              { label: "Password", type: "password", value: password, setter: setPassword, placeholder: "Your password" },
+            ].map((field) => (
+              <div key={field.label}>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                  {field.label}
+                </label>
+                <input
+                  type={field.type}
+                  required
+                  value={field.value}
+                  onChange={(e) => field.setter(e.target.value)}
+                  placeholder={field.placeholder}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: 8,
+                    border: "1.5px solid #e2e8f0",
+                    fontSize: 14,
+                    color: "#0f172a",
+                    background: "white",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    transition: "border-color 0.2s",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#6366f1")}
+                  onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                />
+              </div>
+            ))}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                marginTop: 4,
+                width: "100%",
+                padding: "12px",
+                borderRadius: 8,
+                border: "none",
+                background: loading ? "#a5b4fc" : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                color: "white",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+                letterSpacing: "0.2px",
+                boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+                transition: "opacity 0.2s",
+              }}
+            >
+              {loading ? "Signing in…" : "Sign In →"}
+            </button>
+          </form>
+
+          <p style={{ marginTop: 24, textAlign: "center", fontSize: 13, color: "#64748b" }}>
+            Don&apos;t have an account?{" "}
+            <Link href="/register" style={{ color: "#6366f1", fontWeight: 600, textDecoration: "none" }}>
+              Register free
+            </Link>
+          </p>
         </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Email address</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            placeholder="jane@example.com"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Password</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            placeholder="••••••••"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none disabled:opacity-50"
-        >
-          {loading ? "Signing in..." : "Sign in"}
-        </button>
-      </form>
-
-      <p className="mt-6 text-center text-sm text-slate-600">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-          Register
-        </Link>
-      </p>
+      </div>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
-      <Suspense fallback={<div className="text-center">Loading...</div>}>
-        <LoginForm />
-      </Suspense>
-    </main>
+    <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", fontSize: 14, color: "#64748b" }}>Loading…</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
-
