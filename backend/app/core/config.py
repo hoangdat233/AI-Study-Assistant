@@ -39,8 +39,8 @@ class Settings(BaseSettings):
     )
 
     def get_cors_origins(self) -> list[str]:
-        """Return CORS_ORIGINS as a list, splitting on commas."""
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        """Return CORS_ORIGINS as a list, splitting on commas, stripping trailing slashes."""
+        return [origin.strip().rstrip("/") for origin in self.cors_origins.split(",") if origin.strip()]
 
     @field_validator("database_url", mode="before")
     @classmethod
