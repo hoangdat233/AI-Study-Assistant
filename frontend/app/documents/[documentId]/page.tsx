@@ -463,8 +463,9 @@ export default function DocumentDetailPage() {
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          📝 Quizzes & Flashcards (Phase 6)
+          📝 Quizzes & Flashcards
         </button>
+
       </nav>
 
       {/* Extracted Text Tab */}

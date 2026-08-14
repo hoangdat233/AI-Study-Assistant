@@ -28,7 +28,7 @@ jobs:
       - name: Run tests
         run: pytest -q
 
-  frontend-lint:
+  frontend-check:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,3 +49,9 @@ jobs:
 
       - name: Run lint
         run: npm run lint
+
+      - name: Run TypeScript typecheck
+        run: npx tsc --noEmit
+
+      - name: Run Next.js build
+        run: npm run build
