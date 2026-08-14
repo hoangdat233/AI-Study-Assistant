@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Resolve the .env file relative to this file's location:
@@ -29,19 +29,38 @@ class Settings(BaseSettings):
     llm_api_key: str | None = None
     llm_model: str = "gemini-3.5-flash"
 
-    cors_origins: list[str] = Field(
-        default=["http://localhost:3000", "http://127.0.0.1:3000"],
-        description="List of allowed CORS origins for FastAPI middleware",
+    # Store as plain string; parse to list via property.
+    # This avoids pydantic_settings v2 attempting JSON deserialization before our validator.
+    cors_origins_raw: str = Field(
+        default="http://localhost:3000,http://127.0.0.1:3000",
+        alias="cors_origins",
+        description="Comma-separated list of allowed CORS origins",
     )
 
-    @field_validator("cors_origins", mode="before")
+    model_config = SettingsConfigDict(
+        env_file=str(_ENV_FILE),
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Parse comma-separated CORS_ORIGINS env var into a list."""
+        raw = self.cors_origins_raw or ""
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+    @field_validator("database_url", mode="before")
     @classmethod
-    def parse_cors_origins(cls, v: Any) -> list[str]:
+    def parse_database_url(cls, v: Any) -> str:
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        if isinstance(v, list):
+            # Normalize Supabase postgres:// or postgresql:// to postgresql+psycopg://
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+psycopg://", 1)
+            if v.startswith("postgresql://") and not v.startswith("postgresql+psycopg://"):
+                return v.replace("postgresql://", "postgresql+psycopg://", 1)
             return v
-        return ["http://localhost:3000", "http://127.0.0.1:3000"]
+        return v
 
     @field_validator("jwt_secret_key", mode="after")
     @classmethod
