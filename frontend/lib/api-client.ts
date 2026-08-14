@@ -1,4 +1,15 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Use env var if available, otherwise auto-detect production vs local at runtime.
+// This ensures the correct URL is used even if NEXT_PUBLIC_API_BASE_URL is not baked into the build.
+const _envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+const _isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+const API_BASE_URL =
+  _envUrl ??
+  (_isLocalhost
+    ? "http://localhost:8000"
+    : "https://ai-study-assistant-api-jlfj.onrender.com");
+
 
 interface RequestOptions {
   token?: string;
