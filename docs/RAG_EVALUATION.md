@@ -6,14 +6,14 @@ This document presents the quantitative evaluation, retrieval quality metrics, d
 
 ## 1. System Configuration & Architecture
 
-| Parameter | Configuration | Technical Rationale |
+| Parameter | Configuration | Technical Role / Description |
 |---|---|---|
 | **Embedding Model** | `gemini-embedding-001` (Google AI Studio) | High-semantic density vector representations |
-| **Vector Dimension** | **3,072 dimensions** | Preserves fine-grained nuance in academic texts |
-| **Chunking Strategy** | **400 words target / 80 words overlap** | Page-aware sliding window preserving `[Page N]` boundaries |
-| **Distance Metric** | **Cosine Distance** (`<=>` in pgvector) | Scale-invariant angle similarity |
-| **Retrieval Top-K** | **$K = 4$** | Optimal balance between recall and context prompt size |
-| **Grounding Cutoff** | **Cosine Distance $\le 0.85$** | Guardrail rejecting ungrounded out-of-domain queries |
+| **Vector Dimension** | **3,072 dimensions** | Dense vector representations for academic text |
+| **Chunking Strategy** | **400 words target / 80 words overlap** | Retained baseline configuration with `[Page N]` boundary markers |
+| **Distance Metric** | **Cosine Distance** (`<=>` in pgvector) | Scale-invariant angular distance |
+| **Retrieval Top-K** | **$K = 4$** | Standard baseline balancing context coverage and prompt size |
+| **Grounding Cutoff** | **Cosine Distance $\le 0.85$** | Retained conservative baseline threshold (first-stage vector guard) |
 | **Citation Schema** | Authoritative DB Chunks | UI deduplication per page with exact chunk provenance |
 
 ---
@@ -37,7 +37,7 @@ Retrieval quality was measured independently from generation across candidate $K
 | Top-K ($K$) | Hit@K (%) | Recall@K (%) | MRR (Mean Reciprocal Rank) | Retrieval Latency (ms) |
 |---|---|---|---|---|
 | **$K = 2$** | **100.00%** | **100.00%** | **1.0000** | ~3.5 ms |
-| **$K = 4$ (Default)** | **100.00%** | **100.00%** | **1.0000** | **~3.4 ms** |
+| **$K = 4$ (Baseline)** | **100.00%** | **100.00%** | **1.0000** | **~3.4 ms** |
 | **$K = 6$** | **100.00%** | **100.00%** | **1.0000** | ~3.3 ms |
 | **$K = 8$** | **100.00%** | **100.00%** | **1.0000** | ~3.1 ms |
 
@@ -67,7 +67,7 @@ Unanswerable / Out-of-Domain Queries (N=4):
 ```
 
 ### Key Observation:
-There is a clear semantic gap ($\Delta \approx 0.14$) between the highest answerable query distance ($0.3298$) and the lowest out-of-domain query distance ($0.4690$).
+On this 15-query dataset, there is a clear semantic gap ($\Delta \approx 0.14$) between the maximum answerable query distance ($0.3298$) and the minimum out-of-domain query distance ($0.4690$).
 
 ---
 
@@ -81,11 +81,11 @@ We evaluated candidate relevance cutoff thresholds to analyze the trade-off betw
 | `0.50` | 11 | 0 | 3 | 1 | **0.9565** | 93.33% |
 | `0.60` | 11 | 0 | 0 | 4 | 0.8462 | 73.33% |
 | `0.70` | 11 | 0 | 0 | 4 | 0.8462 | 73.33% |
-| `0.85` *(Default)* | 11 | 0 | 0 | 4 | 0.8462 | 73.33% |
+| `0.85` *(Baseline)* | 11 | 0 | 0 | 4 | 0.8462 | 73.33% |
 
-### Architectural Insight:
-- **Strict Vector Cutoff ($\le 0.45$)**: Achieves 100% classification accuracy on this benchmark, rejecting ungrounded queries before invoking the LLM, reducing token cost.
-- **Two-Stage Defense ($\text{Threshold} = 0.85$ + LLM Grounding Guard)**: In open-world production deployments with varied academic phrasing, threshold `0.85` provides a safe buffer preventing false rejections on novel vocabulary, while the second-stage strict system prompt (`RAG_SYSTEM_PROMPT`) reliably refuses ungrounded questions.
+### Accurate Interpretation & Decision:
+- **Benchmark Observation**: On this specific 15-query dataset, threshold `0.40` achieved perfect separation ($\text{F1} = 1.0$), while the current threshold `0.85` allowed all 4 out-of-domain queries to pass the vector guard (since max negative distance was $0.5505 \le 0.85$), relying entirely on the second-stage prompt instruction for refusal.
+- **Production Rationale**: Threshold `0.85` is **not claimed to be optimal**; on the current small benchmark, it appears overly permissive at the vector guard stage. However, because a 15-query synthetic dataset is too small to justify a production parameter change, `0.85` is **retained as the existing conservative baseline** pending validation on a larger, more diverse corpus across multiple domains and languages.
 
 ---
 
@@ -93,11 +93,14 @@ We evaluated candidate relevance cutoff thresholds to analyze the trade-off betw
 
 We evaluated alternative chunking window configurations:
 
-| Chunking Configuration | Chunks Generated | Hit@4 | Recall@4 | MRR | Semantic Specificity vs. Completeness |
+| Chunking Configuration | Chunks Generated | Hit@4 | Recall@4 | MRR | Observation |
 |---|---|---|---|---|---|
-| **300 words / 60 overlap** | 5 | 100.00% | 100.00% | 1.0000 | Higher specificity; potential boundary splitting |
-| **400 words / 80 overlap (Selected)** | **5** | **100.00%** | **100.00%** | **1.0000** | **Optimal contextual completeness & speed** |
-| **500 words / 100 overlap** | 5 | 100.00% | 100.00% | 1.0000 | Coarse granularity; higher token consumption |
+| **300 words / 60 overlap** | 5 | 100.00% | 100.00% | 1.0000 | Identical retrieval metrics on small reference text |
+| **400 words / 80 overlap (Baseline)** | **5** | **100.00%** | **100.00%** | **1.0000** | **Retained baseline configuration** |
+| **500 words / 100 overlap** | 5 | 100.00% | 100.00% | 1.0000 | Identical retrieval metrics on small reference text |
+
+### Chunking Decision:
+The evaluation showed identical Hit@4 and MRR across all three tested configurations (300/60, 400/80, 500/100). The small evaluation dataset **did not demonstrate a statistically meaningful retrieval advantage** for any tested chunk configuration. Therefore, **400 words / 80 words overlap is retained as the baseline configuration**.
 
 ---
 

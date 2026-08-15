@@ -92,7 +92,7 @@ The RAG subsystem includes an offline quantitative evaluation harness (`backend/
 - **Hit@4 Rate**: **100.00%** across curated academic query benchmarks.
 - **Recall@4**: **100.00%** with **1.0000 MRR** (Mean Reciprocal Rank).
 - **Retrieval Latency**: **~3.4 ms** per filtered pgvector vector search.
-- **Relevance Cutoff Guard**: Calibrated cosine distance threshold ($0.85$) with strict LLM grounding fallback.
+- **Relevance Cutoff Guard**: Retained baseline cosine distance threshold ($0.85$) combined with two-stage prompt grounding refusal.
 - **Detailed Engineering Report**: See [docs/RAG_EVALUATION.md](docs/RAG_EVALUATION.md) for complete empirical methodology, distance distributions, top-$K$ sweeps, and threshold analysis.
 
 ---

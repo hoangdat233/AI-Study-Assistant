@@ -113,9 +113,9 @@ def run_rag_eval_cli() -> None:
     print("\n" + "=" * 85)
     print("THRESHOLD TRADE-OFF ANALYSIS SUMMARY:")
     print("=" * 85)
-    print("- Thresholds < 0.60: Suffer from high False Rejections (valid academic queries incorrectly refused).")
-    print("- Thresholds > 0.88: Risk False Acceptances (unrelated out-of-domain queries accepted into prompt).")
-    print("- Optimal Threshold Range [0.80 - 0.85]: Maximize F1 score with 100% recall on answerable queries while maintaining high rejection on ungrounded queries.")
+    print("- Threshold 0.40: Achieves perfect separation (F1=1.0) on this 15-query synthetic benchmark.")
+    print("- Threshold 0.85 (Retained Baseline): Overly permissive on this benchmark (passes all 4 negative queries),")
+    print("  relying on second-stage prompt refusal. Retained as conservative baseline pending multi-domain validation.")
     print("=" * 85)
 
 
