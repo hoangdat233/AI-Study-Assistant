@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -7,14 +8,17 @@ import httpx
 from app.ai.base import BaseLLMProvider
 from app.core.config import settings
 
+logger = logging.getLogger("ai_study_assistant")
+
 
 class GeminiProvider(BaseLLMProvider):
-    """Google Gemini LLM provider implementation using direct REST API calls."""
+    """Google Gemini LLM provider implementation using direct REST API calls with resilient model fallback."""
+
+    FALLBACK_MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash"]
 
     def __init__(self, api_key: str | None = None, model: str | None = None) -> None:
         self.api_key = api_key or settings.llm_api_key
-        self.model = model or settings.llm_model or "gemini-3.5-flash"
-
+        self.model = model or settings.llm_model or "gemini-flash-latest"
 
     def generate_text(
         self, system_prompt: str, user_prompt: str, response_mime_type: str | None = None
@@ -29,9 +33,7 @@ class GeminiProvider(BaseLLMProvider):
                 detail="AI service unavailable. Please set a valid LLM_API_KEY in your .env file.",
             )
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
         headers = {"Content-Type": "application/json"}
-
         gen_config: dict[str, Any] = {"temperature": 0.2}
         if response_mime_type:
             gen_config["response_mime_type"] = response_mime_type
@@ -42,60 +44,66 @@ class GeminiProvider(BaseLLMProvider):
             "generationConfig": gen_config,
         }
 
-        try:
-            with httpx.Client(timeout=30.0) as client:
-                response = client.post(url, headers=headers, json=payload)
-                response.raise_for_status()
-                data = response.json()
+        # Build prioritized list of models to try (primary model first, then fallbacks)
+        models_to_try = [self.model]
+        for m in self.FALLBACK_MODELS:
+            if m not in models_to_try:
+                models_to_try.append(m)
 
-            candidates = data.get("candidates", [])
-            if not candidates:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail="AI service returned an empty completion response.",
-                )
+        last_error_detail = "AI service request failed."
+        last_status_code = status.HTTP_502_BAD_GATEWAY
 
-            text_content = (
-                candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            )
-            if not text_content:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail="AI service returned empty response text.",
-                )
-
-            return text_content.strip()
-
-        except httpx.HTTPStatusError as exc:
-            status_code = exc.response.status_code
-            error_detail = "AI provider request failed."
+        for model_name in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.api_key}"
             try:
-                err_data = exc.response.json()
-                if "error" in err_data and "message" in err_data["error"]:
-                    error_detail = f"Gemini API Error: {err_data['error']['message']}"
-            except Exception:
-                pass
+                with httpx.Client(timeout=35.0) as client:
+                    response = client.post(url, headers=headers, json=payload)
+                    response.raise_for_status()
+                    data = response.json()
 
-            if status_code in (401, 403) or "API_KEY_INVALID" in error_detail:
-                raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="AI service authentication failed. Invalid or unactivated LLM_API_KEY.",
+                candidates = data.get("candidates", [])
+                if not candidates:
+                    continue
+
+                text_content = (
+                    candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                 )
-            elif status_code == 429:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="AI service rate limit exceeded. Please try again later.",
-                )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail=error_detail,
-                )
-        except httpx.RequestError:
-            raise HTTPException(
-                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-                detail="AI provider network request timed out.",
-            )
+                if text_content:
+                    return text_content.strip()
+
+            except httpx.HTTPStatusError as exc:
+                status_code = exc.response.status_code
+                error_detail = f"Gemini API Error ({model_name}): {status_code}"
+                try:
+                    err_data = exc.response.json()
+                    if "error" in err_data and "message" in err_data["error"]:
+                        error_detail = f"Gemini API Error: {err_data['error']['message']}"
+                except Exception:
+                    pass
+
+                logger.warning("Model %s failed with %s. Trying next fallback if available...", model_name, error_detail)
+                last_error_detail = error_detail
+
+                if status_code in (401, 403) or "API_KEY_INVALID" in error_detail:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="AI service authentication failed. Invalid or unactivated LLM_API_KEY.",
+                    )
+                elif status_code == 429:
+                    last_status_code = status.HTTP_429_TOO_MANY_REQUESTS
+                else:
+                    last_status_code = status.HTTP_502_BAD_GATEWAY
+
+            except httpx.RequestError as exc:
+                logger.warning("Network error calling model %s: %s", model_name, exc)
+                last_error_detail = f"AI provider network timeout on {model_name}."
+                last_status_code = status.HTTP_504_GATEWAY_TIMEOUT
+
+        # If all candidate models failed
+        raise HTTPException(
+            status_code=last_status_code,
+            detail=last_error_detail,
+        )
 
 
 class MockLLMProvider(BaseLLMProvider):
@@ -121,7 +129,6 @@ class MockLLMProvider(BaseLLMProvider):
                 }
             )
         return "Based on the retrieved document context, software engineering emphasizes systematic design patterns and modularity."
-
 
 
 def get_llm_provider() -> BaseLLMProvider:

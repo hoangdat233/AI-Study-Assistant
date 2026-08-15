@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "gemini"
     llm_api_key: str | None = None
-    llm_model: str = "gemini-3.5-flash"
+    llm_model: str = "gemini-flash-latest"
 
     # Plain string — pydantic_settings will never try to JSON-decode a str field.
     # Parsed into a list via get_cors_origins() method used by main.py.
