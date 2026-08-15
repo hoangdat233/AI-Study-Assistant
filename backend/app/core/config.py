@@ -42,6 +42,17 @@ class Settings(BaseSettings):
         """Return CORS_ORIGINS as a list, splitting on commas, stripping trailing slashes."""
         return [origin.strip().rstrip("/") for origin in self.cors_origins.split(",") if origin.strip()]
 
+    @field_validator("llm_model", mode="before")
+    @classmethod
+    def normalize_llm_model(cls, v: Any) -> str:
+        if isinstance(v, str):
+            v_clean = v.strip()
+            # If set to known overloaded or deprecated models, automatically use gemini-flash-latest
+            if "3.5" in v_clean or "2.0" in v_clean or "1.5" in v_clean or not v_clean:
+                return "gemini-flash-latest"
+            return v_clean
+        return "gemini-flash-latest"
+
     @field_validator("database_url", mode="before")
     @classmethod
     def parse_database_url(cls, v: Any) -> str:
