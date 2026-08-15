@@ -14,11 +14,11 @@ logger = logging.getLogger("ai_study_assistant")
 class GeminiProvider(BaseLLMProvider):
     """Google Gemini LLM provider implementation using direct REST API calls with resilient model fallback."""
 
-    FALLBACK_MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash"]
+    FALLBACK_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash"]
 
     def __init__(self, api_key: str | None = None, model: str | None = None) -> None:
         self.api_key = api_key or settings.llm_api_key
-        self.model = model or settings.llm_model or "gemini-flash-latest"
+        self.model = model or settings.llm_model or "gemini-flash-lite-latest"
 
     def generate_text(
         self, system_prompt: str, user_prompt: str, response_mime_type: str | None = None
