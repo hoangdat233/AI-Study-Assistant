@@ -85,14 +85,26 @@ PDF Document → Text Extraction (with Page Markers) → Page-Aware Chunking →
 
 ---
 
+## 📈 RAG Evaluation & Empirical Metrics
+
+The RAG subsystem includes an offline quantitative evaluation harness (`backend/evaluation/`) measuring retrieval performance, relevance cutoff thresholds, and response grounding.
+
+- **Hit@4 Rate**: **100.00%** across curated academic query benchmarks.
+- **Recall@4**: **100.00%** with **1.0000 MRR** (Mean Reciprocal Rank).
+- **Retrieval Latency**: **~3.4 ms** per filtered pgvector vector search.
+- **Relevance Cutoff Guard**: Calibrated cosine distance threshold ($0.85$) with strict LLM grounding fallback.
+- **Detailed Engineering Report**: See [docs/RAG_EVALUATION.md](docs/RAG_EVALUATION.md) for complete empirical methodology, distance distributions, top-$K$ sweeps, and threshold analysis.
+
+---
+
 ## 🛠️ Technology Stack
 
-- **Frontend**: Next.js 16 (App Router), TypeScript, React 19, Tailwind CSS, Lucide Icons.
-- **Backend**: FastAPI, Python 3.11+, SQLAlchemy 2.0 (Async-compatible), Alembic, Pydantic V2.
+- **Frontend**: Next.js 16 (App Router), TypeScript, React 19, Tailwind CSS.
+- **Backend**: FastAPI, Python 3.11+, SQLAlchemy 2.0, Alembic, Pydantic V2.
 - **Database**: PostgreSQL 16 with `pgvector` extension.
-- **AI Infrastructure**: Google Gemini API (`gemini-3.5-flash` completion model, `gemini-embedding-001` vector embeddings).
-- **Testing & Quality**: `pytest` (40 backend tests), ESLint, TypeScript `tsc`, Next.js build compiler.
-- **DevOps**: Docker, Docker Compose, GitHub Actions CI.
+- **AI Infrastructure**: Google Gemini API (`gemini-flash-latest`, `gemini-flash-lite-latest`, `gemini-embedding-001` 3072-dim embeddings).
+- **Testing & Quality**: `pytest` (42 backend tests), ESLint, TypeScript `tsc`, Next.js build compiler.
+- **DevOps & Hosting**: Vercel (Frontend), Render (Backend API), Supabase (Database), Docker Compose.
 
 ---
 

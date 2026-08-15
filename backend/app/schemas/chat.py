@@ -19,6 +19,7 @@ class ChatMessageResponse(BaseModel):
     answer: str = Field(description="Grounded AI response")
     sources: list[SourceItem] = Field(default_factory=list, description="Source page citations")
     chat_id: uuid.UUID = Field(description="Chat conversation UUID")
+    telemetry: dict[str, Any] | None = Field(default=None, description="Observability latency timings in milliseconds")
 
 
 class MessageItem(BaseModel):

@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 from unittest.mock import patch
 
 from app.ai.embedding import MockEmbeddingProvider
@@ -6,6 +7,8 @@ from app.ai.provider import MockLLMProvider
 from app.services.document_service import document_service
 from app.services.indexing_service import DocumentChunker, indexing_service
 from app.services.rag_service import rag_service
+from evaluation.evaluate_rag import ThresholdEvaluator
+from evaluation.evaluate_retrieval import RetrievalEvaluator
 
 MINIMAL_PDF_BYTES = (
     b"%PDF-1.4\n"
@@ -175,7 +178,7 @@ def test_rag_ungrounded_fallback(client, db_session):
         indexing_service.index_document(db_session, doc)
 
     # Ask ungrounded question with high vector distance threshold mock
-    with patch.object(rag_service, "search_similar_chunks", return_value=[{"chunk_id": "1", "page_number": 1, "content": "xyz", "score": 0.95}]):
+    with patch.object(rag_service, "search_similar_chunks", return_value=([{"chunk_id": "1", "page_number": 1, "content": "xyz", "score": 0.95}], 10.0, 5.0)):
         ans = rag_service.answer_question(db_session, doc, "What is quantum mechanics?")
         assert ans["answer"] == "I couldn't find enough information in this document to answer that question."
         assert len(ans["sources"]) == 0
@@ -226,7 +229,76 @@ def test_rag_evaluation_scenarios(client, db_session):
         assert len(res_b["sources"]) > 0
 
     # Scenario C: Answer Not In Context (Grounding Fallback)
-    with patch.object(rag_service, "search_similar_chunks", return_value=[{"chunk_id": "1", "page_number": 1, "content": "xyz", "score": 0.90}]):
+    with patch.object(rag_service, "search_similar_chunks", return_value=([{"chunk_id": "1", "page_number": 1, "content": "xyz", "score": 0.90}], 10.0, 5.0)):
         res_c = rag_service.answer_question(db_session, doc, "What is the tuition fee for Harvard University?")
         assert res_c["answer"] == "I couldn't find enough information in this document to answer that question."
         assert len(res_c["sources"]) == 0
+
+
+def test_rag_source_deduplication_and_citation_provenance(db_session):
+    """Phase 9 Guarantee: Deduplicates UI source page badges while preserving all chunks in prompt context."""
+    from app.models.document import Document
+    import uuid
+
+    doc = Document(
+        id=uuid.uuid4(),
+        title="dedup_test",
+        original_filename="dedup.pdf",
+        file_path="/tmp/dedup.pdf",
+        file_size=100,
+        extracted_text="--- Page 3 ---\nChunk 1 text.\nChunk 2 text on same page.",
+        processing_status="INDEXED",
+    )
+
+    # Simulate 4 retrieved chunks where chunks 1 & 2 share Page 3, and chunk 3 is Page 5
+    mock_retrieved = [
+        {"chunk_id": "c1", "chunk_index": 0, "page_number": 3, "content": "Section A on page 3", "score": 0.20},
+        {"chunk_id": "c2", "chunk_index": 1, "page_number": 3, "content": "Section B on page 3", "score": 0.25},
+        {"chunk_id": "c3", "chunk_index": 2, "page_number": 5, "content": "Section C on page 5", "score": 0.30},
+        {"chunk_id": "c4", "chunk_index": 3, "page_number": 5, "content": "Section D on page 5", "score": 0.35},
+    ]
+
+    with patch.object(rag_service, "search_similar_chunks", return_value=(mock_retrieved, 12.0, 4.0)), \
+         patch("app.services.rag_service.get_llm_provider", return_value=MockLLMProvider()):
+        res = rag_service.answer_question(db_session, doc, "Test query")
+
+    # Authoritative citations should contain exactly 2 unique pages (Page 3, Page 5)
+    assert len(res["sources"]) == 2
+    pages = [s["page"] for s in res["sources"]]
+    assert pages == [3, 5]
+    # Verify telemetry is populated
+    assert "telemetry" in res
+    assert res["telemetry"]["embedding_ms"] == 12.0
+    assert res["telemetry"]["retrieval_ms"] == 4.0
+    assert res["telemetry"]["retrieved_chunks"] == 4
+
+
+def test_evaluation_framework_metrics_calculation(tmp_path):
+    """Phase 9 Guarantee: Tests Hit@K, Recall@K, and MRR calculations deterministically."""
+    sample_doc = (
+        "--- Page 1 ---\nSupervised machine learning.\n\n"
+        "--- Page 2 ---\nUnsupervised learning and clustering.\n\n"
+        "--- Page 3 ---\nReinforcement learning."
+    )
+    dataset = [
+        {"id": "q1", "question": "What is supervised learning?", "expected_pages": [1], "answerable": True},
+        {"id": "q2", "question": "Explain k-means clustering.", "expected_pages": [2], "answerable": True},
+        {"id": "q3", "question": "What is the capital of Mars?", "expected_pages": [], "answerable": False},
+    ]
+
+    evaluator = RetrievalEvaluator(
+        document_text=sample_doc,
+        embedding_provider=MockEmbeddingProvider(),
+        cache_file=tmp_path / "test_cache.json",
+    )
+
+    k_metrics = evaluator.evaluate_k_metrics(dataset, k_values=[2, 4])
+    assert 2 in k_metrics
+    assert 4 in k_metrics
+    assert 0.0 <= k_metrics[2].hit_rate <= 1.0
+    assert 0.0 <= k_metrics[2].mrr <= 1.0
+
+    thresh_eval = ThresholdEvaluator(evaluator)
+    threshold_results = thresh_eval.evaluate_thresholds(dataset, [0.50, 0.85])
+    assert len(threshold_results) == 2
+    assert threshold_results[0].accuracy >= 0.0

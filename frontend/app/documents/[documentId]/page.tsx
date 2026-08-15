@@ -158,6 +158,23 @@ export default function DocumentDetailPage() {
     loadStudyMaterials();
   }, [activeTab, documentId]);
 
+  function getCleanErrorMessage(err: unknown, fallback: string): string {
+    if (err instanceof Error) {
+      const msg = err.message;
+      if (msg.includes("503") || msg.includes("high demand") || msg.includes("temporarily unavailable") || msg.includes("502")) {
+        return "AI service is currently busy. Please try again in a few moments.";
+      }
+      if (msg.includes("429") || msg.includes("rate limit")) {
+        return "Rate limit reached. Please wait a moment before trying again.";
+      }
+      if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+        return "Connection issue. Please check your network connection.";
+      }
+      return msg;
+    }
+    return fallback;
+  }
+
   async function handleGenerateSummary(force: boolean = false) {
     try {
       setSummaryLoading(true);
@@ -165,7 +182,7 @@ export default function DocumentDetailPage() {
       const result = await generateDocumentSummary(documentId, force);
       setSummary(result);
     } catch (err: unknown) {
-      setSummaryError(err instanceof Error ? err.message : "Failed to generate AI summary.");
+      setSummaryError(getCleanErrorMessage(err, "Failed to generate AI summary. Please try again."));
     } finally {
       setSummaryLoading(false);
     }
@@ -181,7 +198,7 @@ export default function DocumentDetailPage() {
         setDocument({ ...document, processing_status: "INDEXED" });
       }
     } catch (err: unknown) {
-      setChatError(err instanceof Error ? err.message : "Failed to index document.");
+      setChatError(getCleanErrorMessage(err, "Failed to index document."));
     } finally {
       setIndexLoading(false);
     }
@@ -208,7 +225,7 @@ export default function DocumentDetailPage() {
       };
       setChatMessages((prev) => [...prev, assistantMsg]);
     } catch (err: unknown) {
-      setChatError(err instanceof Error ? err.message : "Failed to send message.");
+      setChatError(getCleanErrorMessage(err, "Failed to send message. Please try again."));
     } finally {
       setChatLoading(false);
     }
@@ -223,7 +240,7 @@ export default function DocumentDetailPage() {
       setQuizzes((prev) => [newQuiz, ...prev]);
       startQuiz(newQuiz);
     } catch (err: unknown) {
-      setQuizError(err instanceof Error ? err.message : "Failed to generate quiz.");
+      setQuizError(getCleanErrorMessage(err, "Failed to generate quiz. Please try again."));
     } finally {
       setQuizLoading(false);
     }

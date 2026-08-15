@@ -1,0 +1,122 @@
+[
+  {
+    "id": "q1",
+    "question": "What algorithms are commonly used in supervised learning?",
+    "category": "factual_lookup",
+    "expected_pages": [1],
+    "answerable": true,
+    "key_terms": ["linear regression", "decision trees", "support vector machines", "neural networks"]
+  },
+  {
+    "id": "q2",
+    "question": "How does unsupervised learning discover structure in data without labels?",
+    "category": "factual_lookup",
+    "expected_pages": [1],
+    "answerable": true,
+    "key_terms": ["k-means clustering", "hierarchical clustering", "PCA", "unlabeled"]
+  },
+  {
+    "id": "q3",
+    "question": "What is the role of backpropagation and the chain rule in neural networks?",
+    "category": "factual_lookup",
+    "expected_pages": [2],
+    "answerable": true,
+    "key_terms": ["gradients", "loss function", "weights", "chain rule"]
+  },
+  {
+    "id": "q4",
+    "question": "Which neural network architecture is specialized for computer vision and grid spatial data?",
+    "category": "factual_lookup",
+    "expected_pages": [2],
+    "answerable": true,
+    "key_terms": ["Convolutional Neural Networks", "CNNs"]
+  },
+  {
+    "id": "q5",
+    "question": "What key innovation did the Transformer architecture introduce to replace recurrent models?",
+    "category": "factual_lookup",
+    "expected_pages": [3],
+    "answerable": true,
+    "key_terms": ["multi-head self-attention", "Attention Is All You Need"]
+  },
+  {
+    "id": "q6",
+    "question": "What techniques are used for fine-tuning large foundational models like Gemini?",
+    "category": "paraphrased",
+    "expected_pages": [3],
+    "answerable": true,
+    "key_terms": ["LoRA", "Low-Rank Adaptation", "RLHF"]
+  },
+  {
+    "id": "q7",
+    "question": "What are the sequential steps in a complete RAG system pipeline?",
+    "category": "synthesis",
+    "expected_pages": [4],
+    "answerable": true,
+    "key_terms": ["ingestion", "chunking", "embedding", "indexing", "retrieval", "prompt", "citations"]
+  },
+  {
+    "id": "q8",
+    "question": "How does RAG help reduce hallucinations in large language models?",
+    "category": "paraphrased",
+    "expected_pages": [4],
+    "answerable": true,
+    "key_terms": ["external document retrieval", "grounding", "private domain knowledge"]
+  },
+  {
+    "id": "q9",
+    "question": "What vector distance operators does pgvector support in PostgreSQL?",
+    "category": "factual_lookup",
+    "expected_pages": [5],
+    "answerable": true,
+    "key_terms": ["cosine distance", "<=>", "Euclidean distance", "<->", "inner product", "<#>"]
+  },
+  {
+    "id": "q10",
+    "question": "What is the difference between Flat exact search and HNSW index in vector databases?",
+    "category": "synthesis",
+    "expected_pages": [5],
+    "answerable": true,
+    "key_terms": ["Flat", "exhaustive scan", "HNSW", "graph", "100% recall", "memory"]
+  },
+  {
+    "id": "q11",
+    "question": "How are neural network embeddings combined with relational database indexes in semantic search?",
+    "category": "cross_page_synthesis",
+    "expected_pages": [4, 5],
+    "answerable": true,
+    "key_terms": ["embedding", "pgvector", "B-Tree", "foreign keys", "filtered semantic search"]
+  },
+  {
+    "id": "q12",
+    "question": "What is the capital city of France and its population size?",
+    "category": "unanswerable_out_of_domain",
+    "expected_pages": [],
+    "answerable": false,
+    "key_terms": []
+  },
+  {
+    "id": "q13",
+    "question": "How do quantum computers execute Shor's algorithm for RSA encryption factorization?",
+    "category": "unanswerable_out_of_domain",
+    "expected_pages": [],
+    "answerable": false,
+    "key_terms": []
+  },
+  {
+    "id": "q14",
+    "question": "What is the company valuation and quarterly revenue of Apple Inc?",
+    "category": "unanswerable_out_of_domain",
+    "expected_pages": [],
+    "answerable": false,
+    "key_terms": []
+  },
+  {
+    "id": "q15",
+    "question": "What are the rules and player positions in Olympic water polo?",
+    "category": "unanswerable_out_of_domain",
+    "expected_pages": [],
+    "answerable": false,
+    "key_terms": []
+  }
+]

@@ -1,0 +1,42 @@
+--- Page 1 ---
+Introduction to Machine Learning and Data Engineering.
+Machine learning is a subset of artificial intelligence where algorithms learn patterns from data rather than following explicitly programmed rules.
+Supervised learning uses labeled training datasets to map inputs to desired outputs. Common algorithms include linear regression, decision trees, support vector machines, and neural networks.
+Unsupervised learning finds hidden structure within unlabeled data. Typical techniques include k-means clustering, hierarchical clustering, and principal component analysis (PCA).
+Reinforcement learning trains an agent to make a sequence of decisions by interacting with an environment to maximize cumulative reward.
+
+--- Page 2 ---
+Deep Learning and Neural Network Architectures.
+Deep neural networks consist of an input layer, multiple hidden layers, and an output layer.
+Backpropagation calculates gradients of the loss function with respect to weights using the chain rule of calculus.
+Stochastic Gradient Descent (SGD) and the Adam optimizer adjust network weights iteratively to minimize training error.
+Convolutional Neural Networks (CNNs) specialize in grid-like spatial data such as computer vision and image processing.
+Recurrent Neural Networks (RNNs) and Long Short-Term Memory (LSTM) units handle sequential and temporal data.
+
+--- Page 3 ---
+Transformer Models and Natural Language Processing.
+The Transformer architecture, introduced in the paper "Attention Is All You Need", replaced recurrent mechanisms with multi-head self-attention.
+Self-attention allows tokens in a sequence to compute pairwise relevance scores regardless of distance, enabling massive parallelization during training.
+Large Language Models (LLMs) such as Google Gemini, BERT, and GPT are trained on vast corpora using autoregressive or masked language modeling objectives.
+Fine-tuning adapts foundational models to specialized downstream tasks using techniques like LoRA (Low-Rank Adaptation) and RLHF (Reinforcement Learning from Human Feedback).
+
+--- Page 4 ---
+Retrieval-Augmented Generation (RAG) Architecture.
+RAG combines external document retrieval with generative language models to mitigate hallucination and incorporate private domain knowledge.
+The RAG pipeline consists of:
+1. Document ingestion and text extraction from source formats such as PDF.
+2. Page-aware text chunking with sliding window overlap.
+3. Embedding generation converting text chunks into high-dimensional dense vectors.
+4. Vector database indexing (such as pgvector in PostgreSQL) using cosine distance or dot product metrics.
+5. Semantic retrieval fetching the top-k most relevant chunks for a user query.
+6. Grounded prompt assembly providing retrieved passages to the LLM with strict grounding constraints.
+7. Source citation generation displaying authoritative page references to the user.
+
+--- Page 5 ---
+Database Systems, Vector Search, and System Scalability.
+PostgreSQL supports vector operations through the pgvector extension using vector operators such as cosine distance (<=>), Euclidean distance (<->), and inner product (<#>).
+Vector indexing techniques include:
+- Exact search (Flat index): Performs exhaustive scan, offering 100% recall with linear O(N) complexity suitable for small-to-medium collections.
+- Hierarchical Navigable Small World (HNSW): Constructs a multi-layer proximity graph offering fast logarithmic query time at the cost of higher build time and memory usage.
+- Inverted File Flat (IVFFlat): Clusters vectors into inverted lists, balancing index build speed and memory efficiency.
+Database indexing strategies should combine relational indexes (B-Tree on foreign keys like document_id and user_id) with vector indexes to optimize filtered semantic searches.

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+import logging
 import re
+import time
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete
@@ -7,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.ai.embedding import BaseEmbeddingProvider, get_embedding_provider
 from app.models.document import Document, DocumentChunk
+
+logger = logging.getLogger("ai_study_assistant")
 
 TARGET_WORDS_PER_CHUNK = 400
 OVERLAP_WORDS = 80
@@ -129,9 +133,11 @@ class IndexingService:
                 detail="Extracted document text produced no valid content chunks.",
             )
 
-        # 4. Generate embeddings in batch
+        # 4. Generate embeddings in batch with timing
+        t_embed = time.perf_counter()
         contents = [c.content for c in parsed_chunks]
         embeddings = active_provider.embed_texts(contents)
+        embed_duration_ms = (time.perf_counter() - t_embed) * 1000
 
         # 5. Delete previous chunks if re-indexing
         stmt_delete = delete(DocumentChunk).where(DocumentChunk.document_id == document.id)
@@ -154,6 +160,13 @@ class IndexingService:
         document.processing_status = "INDEXED"
         db.commit()
         db.refresh(document)
+
+        logger.info(
+            "Document indexing complete: document_id=%s, total_chunks=%d, embedding_ms=%.1f",
+            document.id,
+            len(db_chunks),
+            embed_duration_ms,
+        )
 
         return len(db_chunks)
 
