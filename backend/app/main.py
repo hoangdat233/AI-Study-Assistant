@@ -19,16 +19,23 @@ app = FastAPI(
     debug=settings.app_debug,
 )
 
-# Temporarily allow all origins to debug cross-origin connectivity
-# Will revert to settings.get_cors_origins() once verified
-_cors_origins = settings.get_cors_origins()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,  # must be False when allow_origins=["*"]
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+configured_origins = settings.get_cors_origins()
+if not configured_origins or "*" in configured_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=configured_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 @app.exception_handler(Exception)
