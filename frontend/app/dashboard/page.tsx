@@ -114,66 +114,66 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {/* Total Documents */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl transition-all hover:border-slate-700">
+        <div className="glass-panel rounded-3xl p-5 shadow-xl transition-all interactive-card border border-indigo-500/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Documents</span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-950 text-indigo-400 text-lg border border-indigo-800/50">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Documents</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-950/80 text-indigo-400 text-lg border border-indigo-700/40 shadow-inner">
               📄
             </span>
           </div>
           <div className="mt-3 text-3xl font-black text-white">{stats.documents}</div>
-          <p className="mt-1 text-xs text-slate-400">PDF study materials</p>
+          <p className="mt-1 text-xs text-slate-400 font-medium">PDF study materials</p>
         </div>
 
         {/* AI Questions Asked */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl transition-all hover:border-slate-700">
+        <div className="glass-panel rounded-3xl p-5 shadow-xl transition-all interactive-card border border-purple-500/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">AI Chats</span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-950 text-purple-400 text-lg border border-purple-800/50">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">AI Chats</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-950/80 text-purple-400 text-lg border border-purple-700/40 shadow-inner">
               💬
             </span>
           </div>
           <div className="mt-3 text-3xl font-black text-white">{stats.questions_asked}</div>
-          <p className="mt-1 text-xs text-slate-400">RAG questions answered</p>
+          <p className="mt-1 text-xs text-slate-400 font-medium">RAG questions answered</p>
         </div>
 
         {/* Quizzes Completed */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl transition-all hover:border-slate-700">
+        <div className="glass-panel rounded-3xl p-5 shadow-xl transition-all interactive-card border border-emerald-500/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Quizzes</span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-950 text-emerald-400 text-lg border border-emerald-800/50">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Quizzes</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-950/80 text-emerald-400 text-lg border border-emerald-700/40 shadow-inner">
               📝
             </span>
           </div>
           <div className="mt-3 text-3xl font-black text-white">{stats.quizzes_completed}</div>
-          <p className="mt-1 text-xs text-slate-400">Attempts completed</p>
+          <p className="mt-1 text-xs text-slate-400 font-medium">Attempts completed</p>
         </div>
 
         {/* Average Quiz Score */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl transition-all hover:border-slate-700">
+        <div className="glass-panel rounded-3xl p-5 shadow-xl transition-all interactive-card border border-amber-500/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Avg Score</span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-950 text-amber-400 text-lg border border-amber-800/50">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Avg Score</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-950/80 text-amber-400 text-lg border border-amber-700/40 shadow-inner">
               🎯
             </span>
           </div>
           <div className="mt-3 flex items-baseline gap-1 text-3xl font-black text-white">
             {stats.average_quiz_score}
-            <span className="text-lg text-amber-400">%</span>
+            <span className="text-lg text-amber-400 font-bold">%</span>
           </div>
-          <p className="mt-1 text-xs text-slate-400">Overall quiz mastery</p>
+          <p className="mt-1 text-xs text-slate-400 font-medium">Overall quiz mastery</p>
         </div>
 
         {/* Total Flashcards */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl transition-all hover:border-slate-700">
+        <div className="glass-panel rounded-3xl p-5 shadow-xl transition-all interactive-card border border-pink-500/20">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Flashcards</span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-950 text-pink-400 text-lg border border-pink-800/50">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Flashcards</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-pink-950/80 text-pink-400 text-lg border border-pink-700/40 shadow-inner">
               🎴
             </span>
           </div>
           <div className="mt-3 text-3xl font-black text-white">{stats.flashcards}</div>
-          <p className="mt-1 text-xs text-slate-400">Active study cards</p>
+          <p className="mt-1 text-xs text-slate-400 font-medium">Active study cards</p>
         </div>
       </section>
 

@@ -441,48 +441,47 @@ export default function DocumentDetailPage() {
       </header>
 
       {/* Feature Tabs */}
-      <nav className="mt-6 flex border-b border-slate-800 space-x-6 text-sm font-medium">
+      <nav className="mt-6 flex flex-wrap gap-2 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
         <button
           onClick={() => setActiveTab("text")}
-          className={`pb-3 transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
             activeTab === "text"
-              ? "border-b-2 border-indigo-500 font-bold text-indigo-400"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 scale-102"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           }`}
         >
-          Extracted Text
+          📄 Extracted Text
         </button>
         <button
           onClick={() => setActiveTab("summary")}
-          className={`pb-3 transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
             activeTab === "summary"
-              ? "border-b-2 border-indigo-500 font-bold text-indigo-400"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 scale-102"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           }`}
         >
-          AI Summary
+          ⚡ AI Summary
         </button>
         <button
           onClick={() => setActiveTab("chat")}
-          className={`pb-3 transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
             activeTab === "chat"
-              ? "border-b-2 border-indigo-500 font-bold text-indigo-400"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 scale-102"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           }`}
         >
-          ✨ AI Chat (Gemini RAG)
+          💬 RAG Chat
         </button>
         <button
           onClick={() => setActiveTab("study")}
-          className={`pb-3 transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
             activeTab === "study"
-              ? "border-b-2 border-indigo-500 font-bold text-indigo-400"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 scale-102"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           }`}
         >
-          📝 Quizzes & Flashcards
+          🎯 Quizzes & Flashcards
         </button>
-
       </nav>
 
       {/* Extracted Text Tab */}
@@ -850,15 +849,15 @@ export default function DocumentDetailPage() {
                           const isSelected = selectedOption === opt;
                           const isCorrectOpt = opt === currentQ.correct_answer;
 
-                          let optionStyle = "border-slate-800 bg-slate-950 text-slate-200 hover:border-slate-700";
+                          let optionStyle = "border-slate-800/80 bg-slate-950/70 text-slate-200 hover:border-slate-600 hover:bg-slate-900/60";
                           if (isSelected) {
-                            optionStyle = "border-indigo-500 bg-indigo-950/60 text-white font-semibold";
+                            optionStyle = "border-indigo-500 bg-indigo-950/70 text-white font-semibold ring-2 ring-indigo-500/80 shadow-lg shadow-indigo-500/25 animate-select-pop";
                           }
                           if (isSubmitted) {
                             if (isCorrectOpt) {
-                              optionStyle = "border-emerald-500 bg-emerald-950/70 text-emerald-100 font-bold";
+                              optionStyle = "border-emerald-500 bg-emerald-950/80 text-emerald-100 font-bold ring-2 ring-emerald-500/80 shadow-lg shadow-emerald-500/25 animate-select-pop";
                             } else if (isSelected && !isCorrectOpt) {
-                              optionStyle = "border-red-500 bg-red-950/70 text-red-100 font-bold";
+                              optionStyle = "border-red-500 bg-red-950/80 text-red-100 font-bold ring-2 ring-red-500/80 shadow-lg shadow-red-500/25";
                             }
                           }
 
@@ -867,19 +866,29 @@ export default function DocumentDetailPage() {
                               key={oIdx}
                               onClick={() => handleOptionSelect(opt)}
                               disabled={isSubmitted}
-                              className={`w-full text-left rounded-xl border p-4 text-sm transition-all flex items-center justify-between ${optionStyle}`}
+                              className={`w-full text-left rounded-2xl border p-4 text-sm transition-all flex items-center justify-between interactive-option cursor-pointer ${optionStyle}`}
                             >
-                              <div className="flex items-center gap-3">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs font-extrabold">
+                              <div className="flex items-center gap-3.5">
+                                <span
+                                  className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black transition-all ${
+                                    isSelected
+                                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30"
+                                      : "bg-slate-800/90 text-slate-300 border border-slate-700"
+                                  }`}
+                                >
                                   {String.fromCharCode(65 + oIdx)}
                                 </span>
-                                <span>{opt}</span>
+                                <span className="leading-relaxed">{opt}</span>
                               </div>
                               {isSubmitted && isCorrectOpt && (
-                                <span className="text-emerald-400 font-bold text-xs">✅ Correct</span>
+                                <span className="flex items-center gap-1 text-emerald-400 font-bold text-xs bg-emerald-950/90 px-2.5 py-1 rounded-lg border border-emerald-700/50">
+                                  ✅ Correct
+                                </span>
                               )}
                               {isSubmitted && isSelected && !isCorrectOpt && (
-                                <span className="text-red-400 font-bold text-xs">❌ Incorrect</span>
+                                <span className="flex items-center gap-1 text-red-400 font-bold text-xs bg-red-950/90 px-2.5 py-1 rounded-lg border border-red-700/50">
+                                  ❌ Incorrect
+                                </span>
                               )}
                             </button>
                           );
@@ -1116,59 +1125,66 @@ export default function DocumentDetailPage() {
 
               {flashcards.length > 0 && (
                 <div className="space-y-6">
-                  {/* Card Container */}
-                  <div className="relative mx-auto max-w-xl">
+                  {/* Card Container with 3D Flip */}
+                  <div className="relative mx-auto max-w-xl [perspective:1000px]">
                     <div
                       onClick={() => setIsCardFlipped((prev) => !prev)}
-                      className={`relative min-h-[300px] w-full rounded-2xl border p-8 shadow-2xl transition-all duration-500 cursor-pointer flex flex-col justify-between ${
+                      className={`relative min-h-[320px] w-full rounded-3xl border p-8 shadow-2xl transition-all duration-500 cursor-pointer flex flex-col justify-between interactive-card select-none ${
                         isCardFlipped
-                          ? "border-indigo-500 bg-indigo-950/90 text-indigo-100"
-                          : "border-purple-800/80 bg-purple-950/80 text-purple-100"
+                          ? "border-indigo-500/80 bg-gradient-to-br from-indigo-950/90 via-slate-900 to-indigo-950/90 text-indigo-100 shadow-indigo-500/20 ring-1 ring-indigo-500/40"
+                          : "border-purple-600/80 bg-gradient-to-br from-purple-950/90 via-slate-900 to-purple-950/90 text-purple-100 shadow-purple-500/20 ring-1 ring-purple-500/40"
                       }`}
                     >
-                      <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs font-bold uppercase tracking-wider opacity-75">
-                        <span>{isCardFlipped ? "Back — Answer / Definition" : "Front — Term / Question"}</span>
-                        <span>Click to Flip 🔄</span>
+                      <div className="flex items-center justify-between border-b border-white/10 pb-3.5 text-xs font-bold uppercase tracking-wider opacity-85">
+                        <span className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-indigo-400 animate-ping" />
+                          {isCardFlipped ? "Back — Answer / Definition" : "Front — Term / Question"}
+                        </span>
+                        <span className="rounded-full bg-white/10 px-3 py-1 font-semibold text-[11px] hover:bg-white/20 transition-all">
+                          Click to Flip 🔄
+                        </span>
                       </div>
 
-                      <div className="my-auto py-6 text-center">
-                        <p className="text-lg font-bold leading-relaxed">
+                      <div className="my-auto py-8 text-center animate-slide-up">
+                        <p className="text-xl sm:text-2xl font-bold leading-relaxed tracking-tight">
                           {isCardFlipped
                             ? flashcards[currentCardIdx].back
                             : flashcards[currentCardIdx].front}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs opacity-75">
+                      <div className="flex items-center justify-between border-t border-white/10 pt-3.5 text-xs opacity-85">
                         <span>
                           {flashcards[currentCardIdx].source_page && (
-                            <span className="rounded bg-black/30 px-2 py-0.5 font-mono">
+                            <span className="rounded-lg bg-black/40 border border-white/10 px-2.5 py-1 font-mono font-bold text-indigo-300">
                               📄 Page {flashcards[currentCardIdx].source_page}
                             </span>
                           )}
                         </span>
-                        <span>Card {currentCardIdx + 1} of {flashcards.length}</span>
+                        <span className="font-semibold text-slate-300">
+                          Card {currentCardIdx + 1} of {flashcards.length}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Navigation Controls */}
-                  <div className="flex items-center justify-center gap-4">
+                  <div className="flex items-center justify-center gap-3 sm:gap-4">
                     <button
                       onClick={() => {
                         setIsCardFlipped(false);
                         setCurrentCardIdx((prev) => Math.max(0, prev - 1));
                       }}
                       disabled={currentCardIdx === 0}
-                      className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-slate-700 disabled:opacity-50"
+                      className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-slate-700 hover:scale-105 active:scale-95 disabled:opacity-40 transition-all cursor-pointer"
                     >
-                      &larr; Previous Card
+                      &larr; Previous
                     </button>
                     <button
                       onClick={handleShuffleFlashcards}
-                      className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-bold text-purple-300 shadow-md hover:bg-slate-700"
+                      className="rounded-xl border border-purple-500/40 bg-purple-950/60 px-4 py-2.5 text-sm font-bold text-purple-300 shadow-md hover:bg-purple-900/60 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                     >
-                      🔀 Shuffle Cards
+                      🔀 Shuffle
                     </button>
                     <button
                       onClick={() => {
@@ -1176,9 +1192,9 @@ export default function DocumentDetailPage() {
                         setCurrentCardIdx((prev) => Math.min(flashcards.length - 1, prev + 1));
                       }}
                       disabled={currentCardIdx === flashcards.length - 1}
-                      className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-slate-700 disabled:opacity-50"
+                      className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-slate-700 hover:scale-105 active:scale-95 disabled:opacity-40 transition-all cursor-pointer"
                     >
-                      Next Card &rarr;
+                      Next &rarr;
                     </button>
                   </div>
 
